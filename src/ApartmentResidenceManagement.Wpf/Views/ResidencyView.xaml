@@ -1,0 +1,679 @@
+<UserControl x:Class="ApartmentResidenceManagement.Wpf.Views.ResidencyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:behaviors="clr-namespace:ApartmentResidenceManagement.Wpf.Behaviors"
+             xmlns:controls="clr-namespace:ApartmentResidenceManagement.Wpf.Controls"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:enums="clr-namespace:ApartmentResidenceManagement.Domain.Enums;assembly=ApartmentResidenceManagement.Domain"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="{StaticResource PageBgBrush}">
+
+    <UserControl.Resources>
+
+        <!-- DataGrid Header — Green Admin -->
+        <Style x:Key="AdminGridHeader" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F4F7F6"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDarkBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="BorderBrush" Value="#C8E6C9"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- DataGrid Row -->
+        <Style x:Key="AdminGridRow" TargetType="DataGridRow">
+            <Setter Property="Background" Value="{StaticResource CardBgBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#F1F1F1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="42"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F0FAF6"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#C8EAD8"/>
+                    <Setter Property="Foreground" Value="{StaticResource TextDarkBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Form TextBox -->
+        <Style x:Key="FormTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDarkBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" CornerRadius="6" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource BorderHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource PrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Form ComboBox -->
+        <Style x:Key="FormComboBox" TargetType="ComboBox">
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Nút chính Admin Green -->
+        <Style x:Key="AdminPrimaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource TextDarkBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Nút phụ (Refresh, Hủy) -->
+        <Style x:Key="SecondaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="#ECEFF1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#CFD8DC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Nút hành động trong DataGrid (nhỏ) -->
+        <Style x:Key="GridActionBtn" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="4" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- ===== DANH SÁCH CƯ TRÚ (CHỦ ĐẠO CHIẾM TRỌN MÀN HÌNH) ===== -->
+        <Grid Margin="24,20,24,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- Header -->
+                <RowDefinition Height="Auto"/>  <!-- Toolbar -->
+                <RowDefinition Height="Auto"/>  <!-- Error -->
+                <RowDefinition Height="*"/>     <!-- DataGrid -->
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+            <Grid Grid.Row="0" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="CƯ TRÚ" FontSize="22" FontWeight="Bold"
+                               Foreground="{StaticResource TextDarkBrush}"/>
+                    <TextBlock Text="Quản lý quá trình đăng ký, chuyển đến, chuyển đi và thay đổi nơi cư trú."
+                               FontSize="13" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <!-- Tổng số bản ghi -->
+                <Border Grid.Column="1" CornerRadius="20" Padding="12,4"
+                        Background="#E8F5E9" VerticalAlignment="Center">
+                    <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextDarkBrush}">
+                        <Run Text="Tổng: "/>
+                        <Run Text="{Binding Residences.Count, Mode=OneWay}"/>
+                        <Run Text=" bản ghi"/>
+                    </TextBlock>
+                </Border>
+            </Grid>
+
+            <!-- TOOLBAR: Search | Filter | Nút -->
+            <Border Grid.Row="1" Background="White" CornerRadius="10" Padding="16,12" Margin="0,0,0,12">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="6" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.04"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Tìm kiếm -->
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock Text="Tìm kiếm" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,4"/>
+                        <TextBox Style="{StaticResource FormTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Tên cư dân, CCCD hoặc số phòng..." Height="36"/>
+                    </StackPanel>
+
+                    <!-- Lọc trạng thái -->
+                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                        <TextBlock Text="Trạng thái cư trú" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,4"/>
+                        <ComboBox Style="{StaticResource FormComboBox}"
+                                  ItemsSource="{Binding StatusFilterOptions}"
+                                  SelectedItem="{Binding SelectedStatusFilter}" Height="36"/>
+                    </StackPanel>
+
+                    <!-- Nút Làm mới -->
+                    <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                        <TextBlock Text=" " FontSize="11" Margin="0,0,0,4"/>
+                        <Button Style="{StaticResource SecondaryBtn}"
+                                Content="↻  Làm mới" Height="36"
+                                Command="{Binding LoadResidencesCommand}"/>
+                    </StackPanel>
+
+                    <!-- Nút Đăng ký -->
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text=" " FontSize="11" Margin="0,0,0,4"/>
+                        <Button Style="{StaticResource AdminPrimaryBtn}"
+                                Content="＋  Đăng ký cư trú" Height="36"
+                                Command="{Binding OpenRegisterFormCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ERROR / SUCCESS BANNER -->
+            <controls:NotificationBanner Grid.Row="2" Message="{Binding ErrorMessage}" Kind="Error" Margin="0,0,0,12">
+                <controls:NotificationBanner.Style>
+                    <Style TargetType="controls:NotificationBanner">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFormOpen}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </controls:NotificationBanner.Style>
+            </controls:NotificationBanner>
+
+            <!-- DATA GRID CONTAINER -->
+            <Border Grid.Row="3" Background="White" CornerRadius="10" ClipToBounds="True">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="6" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.04"/>
+                </Border.Effect>
+                <Grid>
+                    <!-- Loading State -->
+                    <Border Background="White" CornerRadius="10" Panel.ZIndex="10"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="⏳" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                            <TextBlock Text="Đang tải dữ liệu..." FontSize="14"
+                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty State -->
+                    <Border Background="White" CornerRadius="10" Panel.ZIndex="5">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                            <Condition Binding="{Binding HasError}" Value="False"/>
+                                            <Condition Binding="{Binding Residences.Count}" Value="0"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="Không có dữ liệu cư trú" FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Thử thay đổi bộ lọc hoặc nhấn Làm mới." FontSize="13"
+                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- DataGrid -->
+                    <DataGrid behaviors:DataGridRowNumbers.IsEnabled="True" ItemsSource="{Binding Residences}"
+                              SelectedItem="{Binding SelectedResidence}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              ColumnHeaderStyle="{StaticResource AdminGridHeader}"
+                              RowStyle="{StaticResource AdminGridRow}"
+                              GridLinesVisibility="None"
+                              BorderThickness="0"
+                              Background="Transparent"
+                              SelectionMode="Single"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+
+                            <!-- STT -->
+                            <DataGridTemplateColumn Header="#" Width="50">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Path=(behaviors:DataGridRowNumbers.RowNumber), RelativeSource={RelativeSource AncestorType=DataGridRow}}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Họ Tên (Căn trái, padding 12px) -->
+                            <DataGridTextColumn Header="Họ và Tên" Binding="{Binding Resident.FullName}" Width="1.8*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="12,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="CCCD" Binding="{Binding Resident.IdentityCard}" Width="1.4*">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Căn hộ" Binding="{Binding Apartment.ApartmentNumber}" Width="0.8*">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Ngày vào ở" Binding="{Binding StartDate, StringFormat={}{0:dd/MM/yyyy}}" Width="1.1*">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Ngày chuyển đi" Binding="{Binding EndDate, StringFormat={}{0:dd/MM/yyyy}}" Width="1.2*">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Quan hệ (Căn trái) -->
+                            <DataGridTemplateColumn Header="Quan hệ" Width="1.2*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock VerticalAlignment="Center" Padding="8,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RelationshipType}" Value="{x:Static enums:RelationshipType.Owner}">
+                                                            <Setter Property="Text" Value="Chủ hộ"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextDarkBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RelationshipType}" Value="{x:Static enums:RelationshipType.FamilyMember}">
+                                                            <Setter Property="Text" Value="Thành viên"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextDarkBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RelationshipType}" Value="{x:Static enums:RelationshipType.Tenant}">
+                                                            <Setter Property="Text" Value="Người ở ghép"/>
+                                                            <Setter Property="Foreground" Value="#00796B"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RelationshipType}" Value="{x:Static enums:RelationshipType.Temporary}">
+                                                            <Setter Property="Text" Value="Tạm trú"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Trạng thái (Căn giữa) -->
+                            <DataGridTemplateColumn Header="Trạng thái" Width="1.1*">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="12" Padding="8,3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                            <Setter Property="Background" Value="#ECEFF1"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontWeight="SemiBold" FontSize="12">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                <Setter Property="Text" Value="Đang ở"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                <Setter Property="Text" Value="Đã chuyển đi"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Thao tác (Căn giữa - chỉ hiện khi IsActive=True) -->
+                            <DataGridTemplateColumn Header="Thao tác" Width="1.6*">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <!-- Chuyển căn hộ -->
+                                            <Button Style="{StaticResource GridActionBtn}"
+                                                    Background="#FFF3E0" Foreground="#E65100"
+                                                    Content="Đổi phòng" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.OpenTransferFormCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <!-- Kết thúc cư trú -->
+                                            <Button Style="{StaticResource GridActionBtn}"
+                                                    Background="#FFEBEE" Foreground="{StaticResource ErrorBrush}"
+                                                    Content="Hủy cư trú"
+                                                    Command="{Binding DataContext.OpenTerminateFormCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ===== CỘT PHẢI: FORM MODAL OVERLAY TRUNG TÂM ===== -->
+        <Grid Panel.ZIndex="200"
+              Visibility="{Binding IsFormOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            
+            <!-- Lớp phủ mờ nền sau -->
+            <Border Background="#66000000">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding CancelFormCommand}"/>
+                </Border.InputBindings>
+            </Border>
+
+            <!-- Card Dialog nổi ở trung tâm -->
+            <Border MaxWidth="420" Margin="16" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Grid}}"
+                    Background="White" CornerRadius="10" Padding="24"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.15"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Form Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                        <Border Width="36" Height="4" CornerRadius="2"
+                                Background="{StaticResource PrimaryBrush}"
+                                HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding FormTitle}" FontSize="15" FontWeight="Bold"
+                                   Foreground="{StaticResource TextDarkBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- Form Body -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="420">
+                        <StackPanel>
+
+                            <!-- CASE A: Register hoặc Transfer -->
+                            <StackPanel>
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ActionType}" Value="Register">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding ActionType}" Value="Transfer">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <!-- Chọn cư dân (chỉ khi Register) -->
+                                <StackPanel Margin="0,0,0,14">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ActionType}" Value="Transfer">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="Cư dân" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                                    <ComboBox Style="{StaticResource FormComboBox}"
+                                              ItemsSource="{Binding AvailableResidents}"
+                                              SelectedItem="{Binding SelectedResidentInput}"
+                                              DisplayMemberPath="FullName" Height="36"/>
+                                </StackPanel>
+
+                                <!-- Chọn căn hộ đích -->
+                                <StackPanel Margin="0,0,0,14">
+                                    <TextBlock Text="Căn hộ (đích)" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                                    <ComboBox Style="{StaticResource FormComboBox}"
+                                              ItemsSource="{Binding AvailableApartments}"
+                                              SelectedItem="{Binding SelectedApartmentInput}"
+                                              DisplayMemberPath="ApartmentNumber" Height="36"/>
+                                </StackPanel>
+
+                                <!-- Quan hệ với chủ hộ -->
+                                <StackPanel Margin="0,0,0,14">
+                                    <TextBlock Text="Quan hệ với chủ hộ" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                                    <ComboBox Style="{StaticResource FormComboBox}"
+                                              ItemsSource="{Binding RelationshipTypes}"
+                                              SelectedItem="{Binding SelectedRelationshipType}" Height="36">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Static enums:RelationshipType.Owner}">
+                                                                    <Setter Property="Text" Value="Chủ hộ"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Static enums:RelationshipType.FamilyMember}">
+                                                                    <Setter Property="Text" Value="Thành viên gia đình"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Static enums:RelationshipType.Tenant}">
+                                                                    <Setter Property="Text" Value="Khách thuê phòng"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Static enums:RelationshipType.Temporary}">
+                                                                    <Setter Property="Text" Value="Tạm trú"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Ngày bắt đầu -->
+                                <StackPanel Margin="0,0,0,4">
+                                    <TextBlock Text="Ngày bắt đầu cư trú" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                                    <DatePicker SelectedDate="{Binding StartDateInput}" Height="36" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- CASE B: Terminate -->
+                            <StackPanel>
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ActionType}" Value="Terminate">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <StackPanel Margin="0,0,0,14">
+                                    <TextBlock Text="Ngày kết thúc cư trú" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                                    <DatePicker SelectedDate="{Binding EndDateInput}" Height="36" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+
+                                <controls:NotificationBanner Kind="Warning"
+                                    Message="Sau khi lưu, cư trú sẽ chuyển thành 'Đã chuyển đi'. Căn hộ sẽ tự động cập nhật trống nếu không còn cư dân nào."/>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Thông báo lỗi/thành công trong form -->
+                    <controls:NotificationBanner Grid.Row="2" Message="{Binding ErrorMessage}" Kind="Error" Margin="0,12,0,0"/>
+
+                    <!-- Nút Hủy / Lưu -->
+                    <Grid Grid.Row="3" Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Hủy" Style="{StaticResource SecondaryBtn}" Margin="0,0,6,0" Height="36"
+                                Command="{Binding CancelFormCommand}"/>
+                        <Button Grid.Column="1" Content="Lưu" Style="{StaticResource AdminPrimaryBtn}" Margin="6,0,0,0" Height="36"
+                                Command="{Binding SaveResidencyCommand}"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

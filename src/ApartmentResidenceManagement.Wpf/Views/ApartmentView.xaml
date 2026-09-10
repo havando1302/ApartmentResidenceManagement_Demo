@@ -1,0 +1,342 @@
+<UserControl x:Class="ApartmentResidenceManagement.Wpf.Views.ApartmentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:behaviors="clr-namespace:ApartmentResidenceManagement.Wpf.Behaviors"
+             xmlns:controls="clr-namespace:ApartmentResidenceManagement.Wpf.Controls"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:enums="clr-namespace:ApartmentResidenceManagement.Domain.Enums;assembly=ApartmentResidenceManagement.Domain"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="{StaticResource PageBgBrush}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== CỘT TRÁI: DANH SÁCH ===== -->
+        <Grid Grid.Column="0" Margin="32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- Header -->
+                <RowDefinition Height="Auto"/>  <!-- Toolbar -->
+                <RowDefinition Height="Auto"/>  <!-- Error -->
+                <RowDefinition Height="*"/>     <!-- DataGrid -->
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+            <Grid Grid.Row="0" Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Quản lý Căn hộ" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextDarkBrush}"/>
+                    <TextBlock Text="Quản lý danh sách căn hộ trong tòa nhà, diện tích và trạng thái sử dụng." FontSize="14" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+                
+                <Border Grid.Column="1" CornerRadius="{StaticResource RadiusLarge}" Padding="16,8" Background="{StaticResource PrimaryLightBrush}" VerticalAlignment="Center">
+                    <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PrimaryDarkBrush}">
+                        <Run Text="Tổng cộng: "/>
+                        <Run Text="{Binding Apartments.Count, Mode=OneWay}"/>
+                        <Run Text=" căn hộ"/>
+                    </TextBlock>
+                </Border>
+            </Grid>
+
+            <!-- TOOLBAR: Search | Filter | Nút -->
+            <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,0,24">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Tìm kiếm -->
+                    <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                        <TextBlock Text="Tìm kiếm căn hộ" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="40" Tag="Nhập số phòng..."/>
+                    </StackPanel>
+
+                    <!-- Lọc Trạng thái -->
+                    <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                        <TextBlock Text="Trạng thái" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusFilterOptions}" SelectedItem="{Binding SelectedStatusFilter}" Height="40">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.Empty}">
+                                                        <Setter Property="Text" Value="Trống"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.Occupied}">
+                                                        <Setter Property="Text" Value="Đang ở"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.UnderMaintenance}">
+                                                        <Setter Property="Text" Value="Bảo trì"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                        <Setter Property="Text" Value="Tất cả"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Lọc Tầng -->
+                    <StackPanel Grid.Column="2" Margin="0,0,16,0">
+                        <TextBlock Text="Tầng" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding AvailableFloors}" SelectedItem="{Binding SelectedFloorFilter}" Height="40">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <Binding Path="." TargetNullValue="Tất cả"/>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Nút Làm mới -->
+                    <StackPanel Grid.Column="3" Margin="0,0,12,0" VerticalAlignment="Bottom">
+                        <Button Style="{StaticResource OutlineButton}" Content="↻ Làm mới" Height="40" Padding="16,0" Command="{Binding LoadApartmentsCommand}"/>
+                    </StackPanel>
+
+                    <!-- Nút Thêm căn hộ -->
+                    <StackPanel Grid.Column="4" VerticalAlignment="Bottom">
+                        <Button Style="{StaticResource PrimaryButton}" Content="＋ Thêm căn hộ" Height="40" Padding="20,0" Command="{Binding OpenAddFormCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ERROR BANNER -->
+            <controls:NotificationBanner Grid.Row="2" Message="{Binding ErrorMessage}" Kind="Error" Margin="0,0,0,16">
+                <controls:NotificationBanner.Style>
+                    <Style TargetType="controls:NotificationBanner">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFormOpen}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </controls:NotificationBanner.Style>
+            </controls:NotificationBanner>
+
+            <!-- DATA GRID CONTAINER -->
+            <Border Grid.Row="3" Style="{StaticResource CardStyle}">
+                <Grid>
+                    <!-- Loading State -->
+                    <Border Background="{StaticResource CardBgBrush}" CornerRadius="{StaticResource RadiusMedium}" Panel.ZIndex="10" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="⏳" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                            <TextBlock Text="Đang tải dữ liệu..." FontSize="16" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty State -->
+                    <Border Background="{StaticResource CardBgBrush}" CornerRadius="{StaticResource RadiusMedium}" Panel.ZIndex="5">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                            <Condition Binding="{Binding HasError}" Value="False"/>
+                                            <Condition Binding="{Binding Apartments.Count}" Value="0"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="🏢" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16" Opacity="0.5"/>
+                            <TextBlock Text="Chưa có căn hộ nào" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextDarkBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="Hãy thêm căn hộ mới hoặc thay đổi điều kiện tìm kiếm." FontSize="14" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- DataGrid -->
+                    <DataGrid behaviors:DataGridRowNumbers.IsEnabled="True" ItemsSource="{Binding Apartments}" SelectedItem="{Binding SelectedApartment}" Style="{StaticResource ModernDataGrid}" AutoGenerateColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="#" Width="60">
+                                 <DataGridTemplateColumn.CellTemplate>
+                                     <DataTemplate>
+                                         <TextBlock Text="{Binding Path=(behaviors:DataGridRowNumbers.RowNumber), RelativeSource={RelativeSource AncestorType=DataGridRow}}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
+                                     </DataTemplate>
+                                 </DataGridTemplateColumn.CellTemplate>
+                             </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Số căn hộ" Binding="{Binding ApartmentNumber}" Width="1.5*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Tầng" Binding="{Binding Floor}" Width="1*"/>
+                            <DataGridTextColumn Header="Diện tích (m²)" Binding="{Binding Area, StringFormat={}{0:N1}}" Width="1.5*"/>
+
+                            <DataGridTemplateColumn Header="Trạng thái" Width="1.5*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="12" Padding="12,4" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:ApartmentStatus.Empty}">
+                                                            <Setter Property="Background" Value="{StaticResource WarningLightBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:ApartmentStatus.Occupied}">
+                                                            <Setter Property="Background" Value="{StaticResource SuccessLightBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:ApartmentStatus.UnderMaintenance}">
+                                                            <Setter Property="Background" Value="{StaticResource DangerLightBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontWeight="Medium" FontSize="12">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:ApartmentStatus.Empty}">
+                                                                <Setter Property="Text" Value="Trống"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:ApartmentStatus.Occupied}">
+                                                                <Setter Property="Text" Value="Đang ở"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:ApartmentStatus.UnderMaintenance}">
+                                                                <Setter Property="Text" Value="Bảo trì"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="Thao tác" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Content="Sửa" Style="{StaticResource OutlineButton}" Foreground="{StaticResource WarningBrush}" BorderBrush="{StaticResource WarningLightBrush}" Background="Transparent" Margin="0,0,8,0" Padding="12,4" Command="{Binding DataContext.OpenEditFormCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                            <Button Content="Xóa" Style="{StaticResource OutlineButton}" Foreground="{StaticResource DangerBrush}" BorderBrush="{StaticResource DangerLightBrush}" Background="Transparent" Padding="12,4" Command="{Binding DataContext.DeleteApartmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ===== FORM MODAL OVERLAY ===== -->
+        <Grid Grid.Column="0" Grid.ColumnSpan="2" Panel.ZIndex="200" Visibility="{Binding IsFormOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="#80000000">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding CancelFormCommand}"/>
+                </Border.InputBindings>
+            </Border>
+
+            <Border MaxWidth="440" Margin="16" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Grid}}"
+                    Background="{StaticResource CardBgBrush}" CornerRadius="{StaticResource RadiusLarge}" Padding="24" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" Direction="270" ShadowDepth="10" Color="#000000" Opacity="0.15"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,24">
+                        <TextBlock Text="{Binding FormTitle}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextDarkBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="Vui lòng điền các thông tin dưới đây" FontSize="14" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="500">
+                        <StackPanel Margin="0,0,0,8">
+                            <StackPanel Margin="0,0,0,20">
+                                <TextBlock Text="Số căn hộ" FontSize="14" FontWeight="Medium" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" Height="42" Text="{Binding EditingApartment.ApartmentNumber, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,20">
+                                <TextBlock Text="Số tầng" FontSize="14" FontWeight="Medium" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" Height="42" Text="{Binding EditingApartment.Floor, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,20">
+                                <TextBlock Text="Diện tích (m²)" FontSize="14" FontWeight="Medium" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" Height="42" Text="{Binding EditingApartment.Area, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,20">
+                                <TextBlock Text="Trạng thái" FontSize="14" FontWeight="Medium" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
+                                <ComboBox Style="{StaticResource ModernComboBox}" Height="42" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding EditingApartment.Status}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.Empty}">
+                                                                <Setter Property="Text" Value="Trống"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.Occupied}">
+                                                                <Setter Property="Text" Value="Đang ở"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.UnderMaintenance}">
+                                                                <Setter Property="Text" Value="Bảo trì"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <controls:NotificationBanner Grid.Row="2" Message="{Binding ErrorMessage}" Kind="Error" Margin="0,12,0,0"/>
+
+                    <Grid Grid.Row="3" Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Hủy" Style="{StaticResource OutlineButton}" Height="44" Command="{Binding CancelFormCommand}"/>
+                        <Button Grid.Column="2" Content="Lưu thông tin" Style="{StaticResource PrimaryButton}" Height="44" Command="{Binding SaveApartmentCommand}"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

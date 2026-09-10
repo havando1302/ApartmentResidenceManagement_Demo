@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/ApartmentResidenceManagement.Domain/ApartmentResidenceManagement.Domain.csproj" />
+  <Project Path="src/ApartmentResidenceManagement.Infrastructure/ApartmentResidenceManagement.Infrastructure.csproj" />
+  <Project Path="src/ApartmentResidenceManagement.Application/ApartmentResidenceManagement.Application.csproj" />
+  <Project Path="tests/ApartmentResidenceManagement.Tests/ApartmentResidenceManagement.Tests.csproj" />
+  <Project Path="tests/ApartmentResidenceManagement.Wpf.Tests/ApartmentResidenceManagement.Wpf.Tests.csproj" />
+  <Project Path="src/ApartmentResidenceManagement.Wpf/ApartmentResidenceManagement.Wpf.csproj" />
+</Solution>

@@ -1,0 +1,562 @@
+<UserControl x:Class="ApartmentResidenceManagement.Wpf.Views.MyVehiclesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ApartmentResidenceManagement.Wpf.Controls"
+             xmlns:behaviors="clr-namespace:ApartmentResidenceManagement.Wpf.Behaviors"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:enums="clr-namespace:ApartmentResidenceManagement.Domain.Enums;assembly=ApartmentResidenceManagement.Domain"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="950"
+             Background="{StaticResource PageBgBrush}">
+
+    <UserControl.Resources>
+        <!-- DataGrid Header — Blue Resident -->
+        <Style x:Key="ResidentGridHeader" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#E3F2FD"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimarySoftBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- DataGrid Row -->
+        <Style x:Key="ResidentGridRow" TargetType="DataGridRow">
+            <Setter Property="Background" Value="{StaticResource CardBgBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#F1F1F1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="42"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Form TextBox -->
+        <Style x:Key="FormTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDarkBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" CornerRadius="6" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource PrimarySoftBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource PrimaryBlueBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Form ComboBox -->
+        <Style x:Key="FormComboBox" TargetType="ComboBox">
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Primary Button -->
+        <Style x:Key="ResidentPrimaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBlueBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource PrimaryDarkBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary Button -->
+        <Style x:Key="SecondaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="#ECEFF1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="6" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#CFD8DC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- GridActionBtn -->
+        <Style x:Key="GridActionBtn" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="4" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== CỘT TRÁI: DANH SÁCH ===== -->
+        <Grid Grid.Column="0" Margin="24,20,12,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- Header -->
+                <RowDefinition Height="Auto"/>  <!-- Toolbar -->
+                <RowDefinition Height="Auto"/>  <!-- Error -->
+                <RowDefinition Height="*"/>     <!-- DataGrid -->
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+            <Grid Grid.Row="0" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Phương tiện của tôi" FontSize="22" FontWeight="Bold"
+                               Foreground="{StaticResource PrimaryDarkBrush}"/>
+                    <TextBlock Text="Đăng ký và quản lý các phương tiện cá nhân được phép sử dụng bãi xe."
+                               FontSize="13" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <Border Grid.Column="1" CornerRadius="20" Padding="12,4"
+                        Background="#E3F2FD" VerticalAlignment="Center">
+                    <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource PrimaryDarkBrush}">
+                        <Run Text="Tổng: "/>
+                        <Run Text="{Binding Vehicles.Count, Mode=OneWay}"/>
+                        <Run Text=" phương tiện"/>
+                    </TextBlock>
+                </Border>
+            </Grid>
+
+            <!-- TOOLBAR: Tìm kiếm | Lọc loại | Nút -->
+            <Border Grid.Row="1" Background="White" CornerRadius="10" Padding="16,12" Margin="0,0,0,12">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="6" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.04"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Tìm kiếm -->
+                    <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                        <TextBlock Text="Tìm kiếm xe" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,4"/>
+                        <TextBox Style="{StaticResource FormTextBox}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Tìm kiếm theo Biển số xe, Hiệu xe..."/>
+                    </StackPanel>
+
+                    <!-- Lọc Loại xe -->
+                    <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                        <TextBlock Text="Loại phương tiện" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,4"/>
+                        <ComboBox Style="{StaticResource FormComboBox}"
+                                  ItemsSource="{Binding TypeFilterOptions}"
+                                  SelectedItem="{Binding SelectedTypeFilter}"/>
+                    </StackPanel>
+
+                    <!-- Nút Làm mới -->
+                    <Button Grid.Column="2" Style="{StaticResource SecondaryBtn}"
+                            Content="↻  Làm mới" VerticalAlignment="Bottom"
+                            Command="{Binding LoadVehiclesCommand}" Margin="0,0,8,0"/>
+
+                    <!-- Nút Đăng ký xe -->
+                    <Button Grid.Column="3" Style="{StaticResource ResidentPrimaryBtn}"
+                            Content="＋  Đăng ký xe mới" VerticalAlignment="Bottom"
+                            Command="{Binding OpenAddFormCommand}"/>
+                </Grid>
+            </Border>
+
+            <!-- ERROR ALERT -->
+            <Grid Grid.Row="2">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFormOpen}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <controls:NotificationBanner Message="{Binding ErrorMessage}" Kind="Error"
+                                             Margin="0,0,0,10"/>
+            </Grid>
+
+            <!-- DATA GRID CONTAINER -->
+            <Border Grid.Row="3" Background="White" CornerRadius="10" ClipToBounds="True">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="6" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.04"/>
+                </Border.Effect>
+                <Grid>
+                    <!-- Loading State -->
+                    <Border Background="White" CornerRadius="10" Panel.ZIndex="10"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="⏳" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                            <TextBlock Text="Đang tải danh sách phương tiện..." FontSize="14"
+                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty State (Chưa có căn hộ) -->
+                    <Border Background="White" CornerRadius="10" Panel.ZIndex="7">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasApartment}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
+                            <TextBlock Text="⚠️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="Chưa có căn hộ đăng ký" FontSize="16" FontWeight="Bold"
+                                       Foreground="{StaticResource PrimaryDarkBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Vui lòng liên hệ Ban Quản Lý để được cập nhật thông tin căn hộ trước khi quản lý phương tiện cá nhân." 
+                                       FontSize="13" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty State (Chưa có xe) -->
+                    <Border Background="White" CornerRadius="10" Panel.ZIndex="5">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                            <Condition Binding="{Binding HasApartment}" Value="True"/>
+                                            <Condition Binding="{Binding Vehicles.Count}" Value="0"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="🏍" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="Chưa đăng ký phương tiện nào" FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Hãy bấm Đăng ký xe mới ở trên." FontSize="13"
+                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- DataGrid -->
+                    <DataGrid behaviors:DataGridRowNumbers.IsEnabled="True" ItemsSource="{Binding Vehicles}"
+                              SelectedItem="{Binding SelectedVehicle}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              ColumnHeaderStyle="{StaticResource ResidentGridHeader}"
+                              RowStyle="{StaticResource ResidentGridRow}"
+                              GridLinesVisibility="None"
+                              BorderThickness="0"
+                              Background="Transparent"
+                              SelectionMode="Single"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+
+                            <!-- STT -->
+                            <DataGridTemplateColumn Header="#" Width="50">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ResidentGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Path=(behaviors:DataGridRowNumbers.RowNumber), RelativeSource={RelativeSource AncestorType=DataGridRow}}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Biển Số Xe (Căn giữa, in đậm) -->
+                            <DataGridTextColumn Header="Biển số xe" Binding="{Binding LicensePlate}" Width="2*">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ResidentGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Loại Xe (Căn giữa - Badge) -->
+                            <DataGridTemplateColumn Header="Loại xe" Width="1.8*">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ResidentGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="12" Padding="10,4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding VehicleType}" Value="{x:Static enums:VehicleType.Car}">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding VehicleType}" Value="{x:Static enums:VehicleType.Moto}">
+                                                            <Setter Property="Background" Value="#E3F2FD"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding VehicleType}" Value="{x:Static enums:VehicleType.Bicycle}">
+                                                            <Setter Property="Background" Value="#FFF3E0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontWeight="SemiBold" FontSize="12">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding VehicleType}" Value="{x:Static enums:VehicleType.Car}">
+                                                                <Setter Property="Text" Value="🚗 Ô tô"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding VehicleType}" Value="{x:Static enums:VehicleType.Moto}">
+                                                                <Setter Property="Text" Value="🏍 Xe máy"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource PrimaryBlueBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding VehicleType}" Value="{x:Static enums:VehicleType.Bicycle}">
+                                                                <Setter Property="Text" Value="🚲 Xe đạp"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Hiệu Xe (Căn trái, padding 12px) -->
+                            <DataGridTextColumn Header="Nhãn hiệu" Binding="{Binding Brand}" Width="2*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="12,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Thao tác (Căn giữa) -->
+                            <DataGridTemplateColumn Header="Thao tác" Width="2*">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ResidentGridHeader}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <!-- Sửa -->
+                                            <Button Style="{StaticResource GridActionBtn}"
+                                                    Background="#FFF3E0" Foreground="#E65100"
+                                                    Content="Sửa" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.OpenEditFormCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <!-- Hủy đăng ký -->
+                                            <Button Style="{StaticResource GridActionBtn}"
+                                                    Background="#FFEBEE" Foreground="{StaticResource ErrorBrush}"
+                                                    Content="Hủy đăng ký"
+                                                    Command="{Binding DataContext.DeleteVehicleCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ===== CỘT PHẢI: FORM ĐĂNG KÝ MODAL OVERLAY ===== -->
+        <Grid x:Name="VehicleFormOverlay" Grid.Column="0" Grid.ColumnSpan="2" Panel.ZIndex="200"
+              Visibility="{Binding IsFormOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            
+            <!-- Lớp phủ mờ -->
+            <Border Background="#66000000">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding CancelFormCommand}"/>
+                </Border.InputBindings>
+            </Border>
+
+            <!-- Card Dialog nổi ở trung tâm -->
+            <Border MaxWidth="410" Background="White" CornerRadius="10" Padding="24" Margin="16"
+                    MaxHeight="{Binding ActualHeight, ElementName=VehicleFormOverlay}"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.15"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                        <Border Width="40" Height="4" CornerRadius="2"
+                                Background="{StaticResource PrimaryBlueBrush}"
+                                HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding FormTitle}" FontSize="15" FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryDarkBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- Body -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <!-- Biển số xe -->
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Biển số xe (Ví dụ: 30A-12345)" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                            <TextBox Style="{StaticResource FormTextBox}"
+                                     Text="{Binding EditingVehicle.LicensePlate, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <!-- Loại xe -->
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Loại phương tiện" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                            <ComboBox Style="{StaticResource FormComboBox}"
+                                      ItemsSource="{Binding VehicleTypes}"
+                                      SelectedItem="{Binding EditingVehicle.VehicleType}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding}" Value="{x:Static enums:VehicleType.Car}">
+                                                            <Setter Property="Text" Value="🚗 Ô tô"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding}" Value="{x:Static enums:VehicleType.Moto}">
+                                                            <Setter Property="Text" Value="🏍 Xe máy"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding}" Value="{x:Static enums:VehicleType.Bicycle}">
+                                                            <Setter Property="Text" Value="🚲 Xe đạp"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Hiệu xe -->
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Hiệu xe / Hãng sản xuất" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,5"/>
+                            <TextBox Style="{StaticResource FormTextBox}"
+                                     Text="{Binding EditingVehicle.Brand, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <controls:NotificationBanner Kind="Information"
+                                                     Message="Mọi phương tiện sẽ được Văn Phòng Quản Lý phê duyệt trước khi cấp thẻ vào bãi."/>
+                    </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Validation stays inside the active dialog, above its actions. -->
+                    <Grid Grid.Row="2" Margin="0,20,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <controls:NotificationBanner Grid.Row="0" Message="{Binding ErrorMessage}"
+                                                     Kind="Error" Margin="0,0,0,14"/>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="Hủy" Style="{StaticResource SecondaryBtn}" Margin="0,0,6,0"
+                                    Command="{Binding CancelFormCommand}"/>
+                            <Button Grid.Column="1" Content="Lưu" Style="{StaticResource ResidentPrimaryBtn}" Margin="6,0,0,0"
+                                    Command="{Binding SaveVehicleCommand}"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,85 @@
+<Window x:Class="ApartmentResidenceManagement.Wpf.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:ApartmentResidenceManagement.Wpf.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Đăng nhập - RMS" 
+        Height="550" Width="900"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+
+    <Border CornerRadius="{StaticResource RadiusLarge}" Background="{StaticResource CardBgBrush}" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" Direction="270" ShadowDepth="10" Color="#000000" Opacity="0.1"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="400"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT PANEL: Banner -->
+            <Grid Grid.Column="0">
+                <Border>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1E3A8A" Offset="0.0"/> <!-- Dark Blue -->
+                            <GradientStop Color="{StaticResource PrimaryColor}" Offset="1.0"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="40">
+                    <TextBlock Text="RMS" FontSize="48" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <TextBlock Text="Residence Management System" FontSize="20" Foreground="{StaticResource PrimaryLightBrush}" Margin="0,0,0,40" HorizontalAlignment="Center" TextAlignment="Center"/>
+                    <TextBlock Text="Nền tảng quản lý cư dân hiện đại, an toàn và hiệu quả." FontSize="16" Foreground="White" FontWeight="Medium" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Opacity="0.9"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- RIGHT PANEL: Form -->
+            <Grid Grid.Column="1" Margin="40">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Button Grid.Row="0" Content="✕" Width="32" Height="32" VerticalAlignment="Top" HorizontalAlignment="Right"
+                        Style="{StaticResource OutlineButton}" BorderThickness="0"
+                        Foreground="{StaticResource TextMutedBrush}" FontSize="16" FontWeight="Bold"
+                        Click="CloseButton_Click" ToolTip="Đóng"/>
+
+                <StackPanel Grid.Row="1" Margin="0,8,0,24">
+                    <TextBlock Text="Đăng Nhập" FontSize="32" FontWeight="Bold" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
+                    <TextBlock Text="Chào mừng bạn quay trở lại!" FontSize="14" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Tên đăng nhập" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
+                        <TextBox Style="{StaticResource ModernTextBox}"
+                                 Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,24" Height="42"/>
+
+                        <TextBlock Text="Mật khẩu" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
+                        <PasswordBox x:Name="txtPassword" Style="{StaticResource ModernPasswordBox}" Height="42"/>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="3">
+                    <controls:NotificationBanner Message="{Binding ErrorMessage}" Kind="Error"
+                                                 Margin="0,0,0,16"/>
+
+                    <Button Content="ĐĂNG NHẬP" Height="48" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding LoginCommand}"
+                            CommandParameter="{Binding ElementName=txtPassword}"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

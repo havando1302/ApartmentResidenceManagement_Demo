@@ -1,0 +1,63 @@
+<UserControl x:Class="ApartmentResidenceManagement.Wpf.Controls.NotificationBanner"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ApartmentResidenceManagement.Wpf.Controls"
+             x:Name="Notice" MaxHeight="160" HorizontalContentAlignment="Stretch"
+             AutomationProperties.Name="{Binding Message, ElementName=Notice}"
+             AutomationProperties.LiveSetting="Polite">
+    <Border CornerRadius="8" BorderThickness="1" Padding="14,12">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="Background" Value="#FEE2E2"/>
+                <Setter Property="BorderBrush" Value="#F87171"/>
+                <Setter Property="TextElement.Foreground" Value="#B91C1C"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Kind, ElementName=Notice}" Value="{x:Static local:NotificationKind.Success}">
+                        <Setter Property="Background" Value="#ECFDF5"/>
+                        <Setter Property="BorderBrush" Value="#6EE7B7"/>
+                        <Setter Property="TextElement.Foreground" Value="#047857"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Kind, ElementName=Notice}" Value="{x:Static local:NotificationKind.Warning}">
+                        <Setter Property="Background" Value="#FFFBEB"/>
+                        <Setter Property="BorderBrush" Value="#FBBF24"/>
+                        <Setter Property="TextElement.Foreground" Value="#92400E"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Kind, ElementName=Notice}" Value="{x:Static local:NotificationKind.Information}">
+                        <Setter Property="Background" Value="#EFF6FF"/>
+                        <Setter Property="BorderBrush" Value="#93C5FD"/>
+                        <Setter Property="TextElement.Foreground" Value="#1D4ED8"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Path Width="20" Height="20" Margin="0,2,10,0" VerticalAlignment="Top"
+                  Stretch="Uniform" Stroke="{Binding Foreground, ElementName=MessageText}"
+                  StrokeThickness="1.8" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                <Path.Style>
+                    <Style TargetType="Path">
+                        <Setter Property="Data" Value="M12,2 L22,21 L2,21 Z M12,8 L12,14 M12,17 L12,18"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Kind, ElementName=Notice}" Value="{x:Static local:NotificationKind.Success}">
+                                <Setter Property="Data" Value="M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12 M7,12 L10,15 L17,8"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Kind, ElementName=Notice}" Value="{x:Static local:NotificationKind.Information}">
+                                <Setter Property="Data" Value="M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12 M12,7 L12,8 M12,11 L12,17"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Path.Style>
+            </Path>
+            <ScrollViewer x:Name="MessageScroller" Grid.Column="1" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
+                          PanningMode="VerticalOnly" Focusable="True">
+                <TextBlock x:Name="MessageText" Text="{Binding Message, ElementName=Notice}"
+                           FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" TextTrimming="None"/>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

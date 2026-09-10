@@ -1,0 +1,30 @@
+## Build outputs
+**/bin/
+**/obj/
+**/publish/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## EF Core/SQLite/LocalDB temporary files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.ldf
+*.mdf
+
+## User-secrets
+secrets.json
+
+## Rider / VS Code
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates

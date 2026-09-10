@@ -1,0 +1,129 @@
+<UserControl x:Class="ApartmentResidenceManagement.Wpf.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="950"
+             Background="{StaticResource PageBgBrush}">
+    
+    <UserControl.Resources>
+        <!-- Style cho Thẻ Thống Kê (Metric Card) -->
+        <Style x:Key="MetricCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBgBrush}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Margin" Value="12"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="8" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.04"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24,20,24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Tiêu đề -->
+            <RowDefinition Height="Auto"/>  <!-- Metric Cards -->
+            <RowDefinition Height="*"/>     <!-- Chào mừng & Chú thích -->
+        </Grid.RowDefinitions>
+
+        <!-- Tiêu đề trang -->
+        <StackPanel Grid.Row="0" Margin="12,0,12,20">
+            <TextBlock Text="Bảng điều khiển tổng quan" FontSize="22" FontWeight="Bold"
+                       Foreground="{StaticResource TextDarkBrush}"/>
+            <TextBlock Text="Thống kê nhanh số liệu quản lý cư trú và căn hộ trong tòa nhà."
+                       FontSize="13" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Metric Cards -->
+        <UniformGrid Grid.Row="1" Columns="3">
+            
+            <!-- CARD 1: CĂN HỘ -->
+            <Border Style="{StaticResource MetricCard}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="TỔNG SỐ CĂN HỘ" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Grid.Row="1" Text="{Binding TotalApartments}" FontSize="36" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,12"/>
+                    
+                    <StackPanel Grid.Row="2">
+                        <Separator Background="{StaticResource BorderBrush}" Margin="0,0,0,12"/>
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Đang cư trú:" Foreground="{StaticResource TextDarkBrush}" FontSize="12.5"/>
+                            <TextBlock Text="{Binding OccupiedApartments}" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" HorizontalAlignment="Right" FontSize="12.5"/>
+                        </Grid>
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Căn hộ trống:" Foreground="{StaticResource TextDarkBrush}" FontSize="12.5"/>
+                            <TextBlock Text="{Binding EmptyApartments}" Foreground="{StaticResource WarningBrush}" FontWeight="Bold" HorizontalAlignment="Right" FontSize="12.5"/>
+                        </Grid>
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Bảo trì, sửa chữa:" Foreground="{StaticResource TextDarkBrush}" FontSize="12.5"/>
+                            <TextBlock Text="{Binding MaintenanceApartments}" Foreground="{StaticResource DangerBrush}" FontWeight="Bold" HorizontalAlignment="Right" FontSize="12.5"/>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+ 
+            <!-- CARD 2: CƯ DÂN -->
+            <Border Style="{StaticResource MetricCard}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="CƯ DÂN ĐĂNG KÝ" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Grid.Row="1" Text="{Binding TotalResidents}" FontSize="36" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}" Margin="0,8,0,12"/>
+
+                    <StackPanel Grid.Row="2">
+                        <Separator Background="{StaticResource BorderBrush}" Margin="0,0,0,12"/>
+                        <TextBlock Text="Tổng số nhân khẩu, cư dân đã được khai báo hồ sơ cư trú hợp lệ trong hệ thống."
+                                   TextWrapping="Wrap" Foreground="{StaticResource TextDarkBrush}" FontSize="12.5" LineHeight="18"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- CARD 3: PHƯƠNG TIỆN -->
+            <Border Style="{StaticResource MetricCard}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="PHƯƠNG TIỆN ĐĂNG KÝ" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Grid.Row="1" Text="{Binding TotalVehicles}" FontSize="36" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" Margin="0,8,0,12"/>
+
+                    <StackPanel Grid.Row="2">
+                        <Separator Background="{StaticResource BorderBrush}" Margin="0,0,0,12"/>
+                        <TextBlock Text="Tổng số phương tiện cá nhân (ô tô, xe máy, xe đạp) gửi tại các bãi đỗ xe tòa nhà."
+                                   TextWrapping="Wrap" Foreground="{StaticResource TextDarkBrush}" FontSize="12.5" LineHeight="18"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+        </UniformGrid>
+
+        <!-- Chào mừng & Chú thích -->
+        <Border Grid.Row="2" Background="{StaticResource CardBgBrush}" CornerRadius="10" Margin="12,16,12,12" Padding="32">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="8" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.03"/>
+            </Border.Effect>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="🏢 HỆ THỐNG QUẢN LÝ CHUNG CƯ" FontSize="20" FontWeight="Bold"
+                           Foreground="{StaticResource TextDarkBrush}" HorizontalAlignment="Center"/>
+                <TextBlock Text="Chào mừng bạn đến với phân hệ Quản trị viên. Hãy chọn các danh mục ở thanh menu bên trái để thực hiện quản lý căn hộ, cư dân, cư trú, phương tiện và xem các báo cáo thống kê."
+                           FontSize="13.5" Foreground="{StaticResource TextMutedBrush}" TextAlignment="Center"
+                           TextWrapping="Wrap" MaxWidth="600" Margin="0,12,0,0" LineHeight="20"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
