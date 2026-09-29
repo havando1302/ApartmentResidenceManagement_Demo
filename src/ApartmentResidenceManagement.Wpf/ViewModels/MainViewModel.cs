@@ -158,12 +158,24 @@ public class MainViewModel : ViewModelBase
         });
         ShowMyProfileCommand = new RelayCommand(_ => {
             CurrentViewModel = MyProfileVm;
-            // Dữ liệu cá nhân đã được Initialize từ constructor
+            _ = MyProfileVm.LoadProfileAsync();
         });
-        ShowMyApartmentCommand = new RelayCommand(_ => CurrentViewModel = MyApartmentVm);
-        ShowFamilyMembersCommand = new RelayCommand(_ => CurrentViewModel = FamilyMembersVm);
-        ShowMyVehiclesCommand = new RelayCommand(_ => CurrentViewModel = MyVehiclesVm);
-        ShowResidencyHistoryCommand = new RelayCommand(_ => CurrentViewModel = ResidencyHistoryVm);
+        ShowMyApartmentCommand = new RelayCommand(_ => {
+            CurrentViewModel = MyApartmentVm;
+            _ = MyApartmentVm.LoadApartmentDataAsync();
+        });
+        ShowFamilyMembersCommand = new RelayCommand(_ => {
+            CurrentViewModel = FamilyMembersVm;
+            _ = FamilyMembersVm.LoadFamilyMembersAsync();
+        });
+        ShowMyVehiclesCommand = new RelayCommand(_ => {
+            CurrentViewModel = MyVehiclesVm;
+            _ = MyVehiclesVm.LoadMyVehiclesAsync();
+        });
+        ShowResidencyHistoryCommand = new RelayCommand(_ => {
+            CurrentViewModel = ResidencyHistoryVm;
+            _ = ResidencyHistoryVm.LoadHistoryAsync();
+        });
 
         // Command Đăng xuất: gọi callback để đóng MainWindow từ App.xaml.cs
         LogoutCommand = new RelayCommand(_ => onLogout?.Invoke());

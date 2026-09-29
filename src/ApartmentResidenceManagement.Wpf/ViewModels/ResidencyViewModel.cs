@@ -190,11 +190,11 @@ public class ResidencyViewModel : ViewModelBase
         _apartmentService = apartmentService;
         _residentService = residentService;
 
-        LoadResidencesCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadResidencesCommand = new AsyncRelayCommand(_ => LoadDataAsync());
         OpenRegisterFormCommand = new RelayCommand(_ => OpenRegisterForm());
         OpenTerminateFormCommand = new RelayCommand(r => OpenTerminateForm(r));
         OpenTransferFormCommand = new RelayCommand(r => OpenTransferForm(r));
-        SaveResidencyCommand = new RelayCommand(async _ => await SaveResidencyAsync());
+        SaveResidencyCommand = new AsyncRelayCommand(_ => SaveResidencyAsync());
         CancelFormCommand = new RelayCommand(_ => CloseForm());
     }
 
@@ -208,10 +208,20 @@ public class ResidencyViewModel : ViewModelBase
             _allResidences = list.ToList();
 
             var apartments = await _apartmentService.GetAllApartmentsAsync();
-            AvailableApartments = apartments.OrderBy(a => a.ApartmentNumber).ToList();
+            AvailableApartments = apartments
+                .Where(a => a.Status != ApartmentStatus.UnderMaintenance)
+                .OrderBy(a => a.ApartmentNumber)
+                .ToList();
 
             var residents = await _residentService.GetAllResidentsAsync();
-            AvailableResidents = residents.OrderBy(r => r.FullName).ToList();
+            var activeResidentIds = _allResidences
+                .Where(rh => rh.IsActive)
+                .Select(rh => rh.ResidentId)
+                .ToHashSet();
+            AvailableResidents = residents
+                .Where(r => !activeResidentIds.Contains(r.Id))
+                .OrderBy(r => r.FullName)
+                .ToList();
 
             ApplyFilters();
         }

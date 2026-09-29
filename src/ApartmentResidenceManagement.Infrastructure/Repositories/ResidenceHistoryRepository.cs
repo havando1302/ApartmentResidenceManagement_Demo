@@ -17,6 +17,7 @@ public class ResidenceHistoryRepository : Repository<ResidenceHistory>, IResiden
     public async Task<IEnumerable<ResidenceHistory>> GetActiveByApartmentIdAsync(int apartmentId)
     {
         return await DbSet
+            .AsNoTracking()
             .Include(rh => rh.Resident)
             .Where(rh => rh.ApartmentId == apartmentId && rh.IsActive)
             .ToListAsync();
@@ -25,6 +26,7 @@ public class ResidenceHistoryRepository : Repository<ResidenceHistory>, IResiden
     public async Task<ResidenceHistory?> GetActiveByResidentIdAsync(int residentId)
     {
         return await DbSet
+            .AsNoTracking()
             .Include(rh => rh.Apartment)
             .FirstOrDefaultAsync(rh => rh.ResidentId == residentId && rh.IsActive);
     }
@@ -32,6 +34,7 @@ public class ResidenceHistoryRepository : Repository<ResidenceHistory>, IResiden
     public async Task<IEnumerable<ResidenceHistory>> GetHistoryByResidentIdAsync(int residentId)
     {
         return await DbSet
+            .AsNoTracking()
             .Include(rh => rh.Apartment)
             .Where(rh => rh.ResidentId == residentId)
             .OrderByDescending(rh => rh.StartDate)
@@ -41,6 +44,7 @@ public class ResidenceHistoryRepository : Repository<ResidenceHistory>, IResiden
     public async Task<IEnumerable<ResidenceHistory>> GetAllWithDetailsAsync()
     {
         return await DbSet
+            .AsNoTracking()
             .Include(rh => rh.Apartment)
             .Include(rh => rh.Resident)
             .OrderByDescending(rh => rh.StartDate)

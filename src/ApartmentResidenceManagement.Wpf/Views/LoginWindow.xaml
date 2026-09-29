@@ -64,10 +64,12 @@
                         <TextBlock Text="Tên đăng nhập" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
                         <TextBox Style="{StaticResource ModernTextBox}"
                                  Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="Tên đăng nhập"
                                  Margin="0,0,0,24" Height="42"/>
 
                         <TextBlock Text="Mật khẩu" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDarkBrush}" Margin="0,0,0,8"/>
-                        <PasswordBox x:Name="txtPassword" Style="{StaticResource ModernPasswordBox}" Height="42"/>
+                        <PasswordBox x:Name="txtPassword" Style="{StaticResource ModernPasswordBox}" Height="42"
+                                     AutomationProperties.Name="Mật khẩu"/>
                     </StackPanel>
                 </ScrollViewer>
 
@@ -76,6 +78,7 @@
                                                  Margin="0,0,0,16"/>
 
                     <Button Content="ĐĂNG NHẬP" Height="48" Style="{StaticResource PrimaryButton}"
+                            IsDefault="True"
                             Command="{Binding LoginCommand}"
                             CommandParameter="{Binding ElementName=txtPassword}"/>
                 </StackPanel>

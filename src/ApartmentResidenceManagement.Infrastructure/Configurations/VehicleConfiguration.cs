@@ -1,4 +1,5 @@
 using ApartmentResidenceManagement.Domain.Entities;
+using ApartmentResidenceManagement.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,6 +26,11 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         builder.Property(v => v.VehicleType)
             .IsRequired()
             .HasConversion<int>();
+
+        builder.Property(v => v.RegistrationStatus)
+            .IsRequired()
+            .HasConversion<int>()
+            .HasDefaultValue(VehicleRegistrationStatus.Pending);
 
         builder.HasOne(v => v.Owner)
             .WithMany(r => r.Vehicles)

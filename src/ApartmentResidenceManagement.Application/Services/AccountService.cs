@@ -27,7 +27,13 @@ public class AccountService
             throw new BusinessRuleException("Tên đăng nhập và mật khẩu không được để trống.");
         }
 
-        var account = await _unitOfWork.UserAccounts.GetByUsernameAsync(username.Trim());
+        username = username.Trim();
+        if (username.Length > 50)
+        {
+            throw new BusinessRuleException("Tên đăng nhập hoặc mật khẩu không chính xác.");
+        }
+
+        var account = await _unitOfWork.UserAccounts.GetByUsernameAsync(username);
         if (account == null)
         {
             throw new BusinessRuleException("Tên đăng nhập hoặc mật khẩu không chính xác.");
@@ -60,6 +66,12 @@ public class AccountService
             throw new BusinessRuleException("Mật khẩu không được để trống và phải có ít nhất 6 ký tự.");
         }
 
+        username = username.Trim();
+        if (username.Length > 50)
+        {
+            throw new BusinessRuleException("Tên đăng nhập không được vượt quá 50 ký tự.");
+        }
+
         var resident = await _unitOfWork.Residents.GetByIdAsync(residentId);
         if (resident == null)
         {
@@ -74,7 +86,7 @@ public class AccountService
         }
 
         // Kiểm tra Username trùng lặp
-        var duplicateUsername = await _unitOfWork.UserAccounts.GetByUsernameAsync(username.Trim());
+        var duplicateUsername = await _unitOfWork.UserAccounts.GetByUsernameAsync(username);
         if (duplicateUsername != null)
         {
             throw new BusinessRuleException($"Tên đăng nhập '{username}' đã được sử dụng. Vui lòng chọn tên khác.");
@@ -82,7 +94,7 @@ public class AccountService
 
         var account = new UserAccount
         {
-            Username = username.Trim(),
+            Username = username,
             PasswordHash = _passwordHasher.HashPassword(password),
             Role = UserRole.Resident,
             ResidentId = residentId,

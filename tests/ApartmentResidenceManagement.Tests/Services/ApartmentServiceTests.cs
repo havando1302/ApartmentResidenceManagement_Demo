@@ -57,4 +57,44 @@ public class ApartmentServiceTests
         var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _service.DeleteApartmentAsync(apartmentId));
         Assert.Contains("đang có cư dân đang hoạt động cư trú", ex.Message);
     }
+
+    [Fact]
+    public async Task UpdateApartment_OccupiedWithoutActiveResidents_ShouldThrowBusinessRuleException()
+    {
+        var existing = new Apartment { Id = 1, ApartmentNumber = "101", Floor = 1, Area = 50, Status = ApartmentStatus.Empty };
+        var update = new Apartment { Id = 1, ApartmentNumber = "101", Floor = 1, Area = 50, Status = ApartmentStatus.Occupied };
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existing);
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(1))
+            .ReturnsAsync(new List<ResidenceHistory>());
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _service.UpdateApartmentAsync(update));
+
+        Assert.Contains("chưa có cư trú hoạt động", ex.Message);
+        Assert.Equal(ApartmentStatus.Empty, existing.Status);
+    }
+
+    [Fact]
+    public async Task UpdateApartment_MaintenanceWithActiveResidents_ShouldThrowBusinessRuleException()
+    {
+        var existing = new Apartment { Id = 1, ApartmentNumber = "101", Floor = 1, Area = 50, Status = ApartmentStatus.Occupied };
+        var update = new Apartment { Id = 1, ApartmentNumber = "101", Floor = 1, Area = 50, Status = ApartmentStatus.UnderMaintenance };
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existing);
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(1))
+            .ReturnsAsync(new List<ResidenceHistory> { new() { ApartmentId = 1, IsActive = true } });
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _service.UpdateApartmentAsync(update));
+
+        Assert.Contains("còn cư dân đang ở", ex.Message);
+        Assert.Equal(ApartmentStatus.Occupied, existing.Status);
+    }
+
+    [Fact]
+    public async Task CreateApartment_NonFiniteArea_ShouldThrowBusinessRuleException()
+    {
+        var apartment = new Apartment { ApartmentNumber = "101", Floor = 1, Area = double.NaN };
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _service.CreateApartmentAsync(apartment));
+
+        Assert.Contains("Diện tích", ex.Message);
+    }
 }

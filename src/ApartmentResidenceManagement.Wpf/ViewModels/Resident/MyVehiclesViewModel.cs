@@ -141,18 +141,17 @@ public class MyVehiclesViewModel : ViewModelBase
     {
         _vehicleService = vehicleService;
         _residenceService = residenceService;
-        LoadVehiclesCommand = new RelayCommand(async _ => await LoadMyVehiclesAsync());
+        LoadVehiclesCommand = new AsyncRelayCommand(_ => LoadMyVehiclesAsync());
         OpenAddFormCommand = new RelayCommand(_ => OpenAddForm());
         OpenEditFormCommand = new RelayCommand(v => { if (v is Vehicle veh) OpenEditForm(veh); });
-        SaveVehicleCommand = new RelayCommand(async _ => await SaveVehicleAsync());
+        SaveVehicleCommand = new AsyncRelayCommand(_ => SaveVehicleAsync());
         CancelFormCommand = new RelayCommand(_ => CloseForm());
-        DeleteVehicleCommand = new RelayCommand(async v => await DeleteVehicleAsync(v));
+        DeleteVehicleCommand = new AsyncRelayCommand(DeleteVehicleAsync);
     }
 
     public void Initialize(UserAccount account)
     {
         _account = account;
-        _ = LoadMyVehiclesAsync();
     }
 
     public async Task LoadMyVehiclesAsync()
@@ -261,6 +260,12 @@ public class MyVehiclesViewModel : ViewModelBase
     {
         ErrorMessage = string.Empty;
 
+        if (_account?.Resident is not { } currentResident)
+        {
+            ErrorMessage = "Không thể xác định tài khoản cư dân.";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(EditingVehicle.LicensePlate))
         {
             ErrorMessage = "Vui lòng nhập biển số xe.";
@@ -277,11 +282,11 @@ public class MyVehiclesViewModel : ViewModelBase
         {
             if (EditingVehicle.Id == 0)
             {
-                await _vehicleService.CreateVehicleAsync(EditingVehicle);
+                await _vehicleService.SubmitVehicleRegistrationAsync(EditingVehicle);
             }
             else
             {
-                await _vehicleService.UpdateVehicleAsync(EditingVehicle);
+                await _vehicleService.UpdateVehicleRegistrationAsync(currentResident.Id, EditingVehicle);
             }
 
             IsFormOpen = false;
@@ -302,6 +307,12 @@ public class MyVehiclesViewModel : ViewModelBase
         if (parameter is not Vehicle vehicle) return;
         ErrorMessage = string.Empty;
 
+        if (_account?.Resident is not { } currentResident)
+        {
+            ErrorMessage = "Không thể xác định tài khoản cư dân.";
+            return;
+        }
+
         var result = NotificationService.Show(
             $"Bạn có chắc chắn muốn hủy đăng ký phương tiện biển số {vehicle.LicensePlate} không?",
             "Xác nhận hủy đăng ký phương tiện",
@@ -316,7 +327,7 @@ public class MyVehiclesViewModel : ViewModelBase
 
         try
         {
-            await _vehicleService.DeleteVehicleAsync(vehicle.Id);
+            await _vehicleService.DeleteVehicleByOwnerAsync(currentResident.Id, vehicle.Id);
             await LoadMyVehiclesAsync();
         }
         catch (BusinessRuleException ex)

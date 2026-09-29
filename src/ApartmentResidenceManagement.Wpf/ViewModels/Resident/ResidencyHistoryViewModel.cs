@@ -61,10 +61,9 @@ public class ResidencyHistoryViewModel : ViewModelBase
     public void Initialize(UserAccount account)
     {
         _account = account;
-        _ = LoadHistoryAsync();
     }
 
-    private async Task LoadHistoryAsync()
+    public async Task LoadHistoryAsync()
     {
         if (_account?.Resident == null) return;
         ErrorMessage = string.Empty;

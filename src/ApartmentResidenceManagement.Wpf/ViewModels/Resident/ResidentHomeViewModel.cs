@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using ApartmentResidenceManagement.Domain.Entities;
 using ApartmentResidenceManagement.Domain.Enums;
 using ApartmentResidenceManagement.Application.Services;
+using ApartmentResidenceManagement.Wpf.Commands;
 
 namespace ApartmentResidenceManagement.Wpf.ViewModels;
 
@@ -19,6 +21,8 @@ public class ResidentHomeViewModel : ViewModelBase
     private int _familyCount;
     private int _vehicleCount;
     private string _residencyStatus = "Không hoạt động";
+    private string _errorMessage = string.Empty;
+    private bool _isLoading;
 
     #region Properties
     public string ResidentName
@@ -56,18 +60,32 @@ public class ResidentHomeViewModel : ViewModelBase
         get => _residencyStatus;
         set => SetProperty(ref _residencyStatus, value);
     }
+
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        set => SetProperty(ref _errorMessage, value);
+    }
+
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set => SetProperty(ref _isLoading, value);
+    }
     #endregion
+
+    public ICommand RefreshCommand { get; }
 
     public ResidentHomeViewModel(ResidenceService residenceService, VehicleService vehicleService)
     {
         _residenceService = residenceService;
         _vehicleService = vehicleService;
+        RefreshCommand = new AsyncRelayCommand(_ => LoadStatsAsync());
     }
 
     public void Initialize(UserAccount account)
     {
         _account = account;
-        _ = LoadStatsAsync();
     }
 
     public async Task LoadStatsAsync()
@@ -76,6 +94,8 @@ public class ResidentHomeViewModel : ViewModelBase
 
         int residentId = _account.Resident.Id;
         ResidentName = _account.Resident.FullName;
+        ErrorMessage = string.Empty;
+        IsLoading = true;
 
         try
         {
@@ -90,56 +110,14 @@ public class ResidentHomeViewModel : ViewModelBase
                 var familyMembers = await _residenceService.GetActiveResidencesByApartmentIdAsync(activeResidence.ApartmentId);
                 FamilyCount = familyMembers.Count();
 
-                // Đổi quan hệ sang tiếng Việt (suy luận thông minh)
-                if (activeResidence.RelationshipType == RelationshipType.Owner)
+                RelationshipText = activeResidence.RelationshipType switch
                 {
-                    RelationshipText = "Chủ Hộ";
-                }
-                else if (activeResidence.RelationshipType == RelationshipType.Tenant)
-                {
-                    RelationshipText = "Người ở ghép";
-                }
-                else if (activeResidence.RelationshipType == RelationshipType.Temporary)
-                {
-                    RelationshipText = "Tạm Trú";
-                }
-                else if (activeResidence.RelationshipType == RelationshipType.FamilyMember)
-                {
-                    var ownerResidence = familyMembers.FirstOrDefault(x => x.RelationshipType == RelationshipType.Owner);
-                    var owner = ownerResidence?.Resident;
-                    var resident = _account.Resident;
-
-                    string relationText = "Thành viên";
-                    if (owner != null)
-                    {
-                        int ageDiff = owner.DateOfBirth.Year - resident.DateOfBirth.Year;
-                        if (owner.Gender == GenderType.Male && resident.Gender == GenderType.Female && Math.Abs(ageDiff) <= 10)
-                        {
-                            relationText = "Vợ";
-                        }
-                        else if (owner.Gender == GenderType.Female && resident.Gender == GenderType.Male && Math.Abs(ageDiff) <= 10)
-                        {
-                            relationText = "Chồng";
-                        }
-                        else if (ageDiff >= 16)
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Con trai" : "Con gái";
-                        }
-                        else if (ageDiff <= -16)
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Bố" : "Mẹ";
-                        }
-                        else if (ageDiff > 0)
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Em trai" : "Em gái";
-                        }
-                        else
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Anh trai" : "Chị gái";
-                        }
-                    }
-                    RelationshipText = relationText;
-                }
+                    RelationshipType.Owner => "Chủ hộ",
+                    RelationshipType.FamilyMember => "Thành viên hộ gia đình",
+                    RelationshipType.Tenant => "Khách thuê",
+                    RelationshipType.Temporary => "Tạm trú",
+                    _ => "Chưa rõ"
+                };
             }
             else
             {
@@ -151,11 +129,15 @@ public class ResidentHomeViewModel : ViewModelBase
 
             // 2. Lấy số lượng xe của cư dân
             var vehicles = await _vehicleService.GetVehiclesByOwnerIdAsync(residentId);
-            VehicleCount = vehicles.Count();
+            VehicleCount = vehicles.Count(v => v.RegistrationStatus == VehicleRegistrationStatus.Approved);
         }
         catch (Exception)
         {
-            // Ghi nhận lỗi chìm, không crash giao diện
+            ErrorMessage = "Không thể tải thông tin tổng quan. Vui lòng thử lại.";
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 }

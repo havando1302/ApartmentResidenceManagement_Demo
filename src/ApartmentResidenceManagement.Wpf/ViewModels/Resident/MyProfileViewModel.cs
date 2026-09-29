@@ -116,13 +116,40 @@ public class MyProfileViewModel : ViewModelBase
     public MyProfileViewModel(ResidentService residentService)
     {
         _residentService = residentService;
-        SaveProfileCommand = new RelayCommand(async _ => await SaveProfileAsync());
+        SaveProfileCommand = new AsyncRelayCommand(_ => SaveProfileAsync());
     }
 
     public void Initialize(UserAccount account)
     {
         _account = account;
         LoadProfileData();
+    }
+
+    public async Task LoadProfileAsync()
+    {
+        ErrorMessage = string.Empty;
+
+        if (_account?.Resident == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var resident = await _residentService.GetResidentByIdAsync(_account.Resident.Id);
+            if (resident == null)
+            {
+                ErrorMessage = "Không tìm thấy hồ sơ cư dân.";
+                return;
+            }
+
+            _account.Resident = resident;
+            LoadProfileData();
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Không thể tải hồ sơ cư dân. Vui lòng thử lại.";
+        }
     }
 
     private void LoadProfileData()
@@ -154,15 +181,24 @@ public class MyProfileViewModel : ViewModelBase
 
         try
         {
-            // Lấy thực thể Resident hiện tại
             var currentResident = _account.Resident;
+            var updateRequest = new Resident
+            {
+                Id = currentResident.Id,
+                FullName = currentResident.FullName,
+                DateOfBirth = currentResident.DateOfBirth,
+                Gender = currentResident.Gender,
+                IdentityCard = currentResident.IdentityCard,
+                PhoneNumber = PhoneNumber,
+                HomeTown = HomeTown
+            };
 
-            // Cập nhật các trường được phép thay đổi
-            currentResident.PhoneNumber = PhoneNumber;
-            currentResident.HomeTown = HomeTown;
+            await _residentService.UpdateResidentAsync(updateRequest);
 
-            // Gọi service để cập nhật xuống DB
-            await _residentService.UpdateResidentAsync(currentResident);
+            currentResident.PhoneNumber = updateRequest.PhoneNumber;
+            currentResident.HomeTown = updateRequest.HomeTown;
+            PhoneNumber = updateRequest.PhoneNumber ?? string.Empty;
+            HomeTown = updateRequest.HomeTown ?? string.Empty;
 
             SuccessMessage = "Cập nhật thông tin liên hệ thành công!";
         }

@@ -152,12 +152,12 @@ public class ApartmentViewModel : ViewModelBase
     {
         _apartmentService = apartmentService;
 
-        LoadApartmentsCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadApartmentsCommand = new AsyncRelayCommand(_ => LoadDataAsync());
         OpenAddFormCommand = new RelayCommand(_ => OpenAddForm());
         OpenEditFormCommand = new RelayCommand(p => { if (p is Apartment apt) OpenEditForm(apt); });
-        SaveApartmentCommand = new RelayCommand(async _ => await SaveDataAsync());
+        SaveApartmentCommand = new AsyncRelayCommand(_ => SaveDataAsync());
         CancelFormCommand = new RelayCommand(_ => CloseForm());
-        DeleteApartmentCommand = new RelayCommand(async p => await DeleteDataAsync(p));
+        DeleteApartmentCommand = new AsyncRelayCommand(DeleteDataAsync);
 
         _selectedStatusFilter = null;
         _selectedFloorFilter = null;

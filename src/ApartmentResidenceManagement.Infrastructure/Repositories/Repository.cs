@@ -22,17 +22,17 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual async Task<T?> GetByIdAsync(int id)
     {
-        return await DbSet.FindAsync(id);
+        return await DbSet.AsNoTracking().FirstOrDefaultAsync(entity => EF.Property<int>(entity, "Id") == id);
     }
 
     public virtual async Task<IEnumerable<T>> GetAllAsync()
     {
-        return await DbSet.ToListAsync();
+        return await DbSet.AsNoTracking().ToListAsync();
     }
 
     public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
     {
-        return await DbSet.Where(predicate).ToListAsync();
+        return await DbSet.AsNoTracking().Where(predicate).ToListAsync();
     }
 
     public virtual async Task AddAsync(T entity)

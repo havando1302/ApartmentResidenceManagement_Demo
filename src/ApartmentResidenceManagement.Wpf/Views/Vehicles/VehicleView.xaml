@@ -437,8 +437,32 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
+                            <!-- Trạng thái phê duyệt -->
+                            <DataGridTemplateColumn Header="Trạng thái" Width="1.2*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="12" Padding="8,3" HorizontalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RegistrationStatus}" Value="{x:Static enums:VehicleRegistrationStatus.Approved}">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RegistrationStatus}" Value="{x:Static enums:VehicleRegistrationStatus.Rejected}">
+                                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding RegistrationStatusText}" FontSize="12" FontWeight="SemiBold"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
                             <!-- Thao tác (Căn giữa) -->
-                            <DataGridTemplateColumn Header="Thao tác" Width="1.3*">
+                            <DataGridTemplateColumn Header="Thao tác" Width="2.5*">
                                 <DataGridTemplateColumn.HeaderStyle>
                                     <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource AdminGridHeader}">
                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -447,6 +471,16 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Style="{StaticResource GridActionBtn}"
+                                                    Background="#E8F5E9" Foreground="{StaticResource SuccessBrush}"
+                                                    Content="Duyệt" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.ApproveVehicleCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Style="{StaticResource GridActionBtn}"
+                                                    Background="#FFEBEE" Foreground="{StaticResource ErrorBrush}"
+                                                    Content="Từ chối" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.RejectVehicleCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
                                             <!-- Sửa -->
                                             <Button Style="{StaticResource GridActionBtn}"
                                                     Background="#FFF3E0" Foreground="#E65100"
@@ -484,7 +518,7 @@
             </Border>
 
             <!-- Card Dialog nổi ở trung tâm -->
-            <Border MaxWidth="440" Margin="16" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Grid}}"
+            <Border MaxWidth="440" Margin="16,24"
                     Background="White" CornerRadius="10" Padding="24"
                     HorizontalAlignment="Stretch" VerticalAlignment="Center">
                 <Border.Effect>

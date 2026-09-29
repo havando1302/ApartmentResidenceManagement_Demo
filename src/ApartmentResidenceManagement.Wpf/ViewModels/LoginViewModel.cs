@@ -47,7 +47,7 @@ public class LoginViewModel : ViewModelBase
     public LoginViewModel(AccountService accountService)
     {
         _accountService = accountService;
-        LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
+        LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
     }
 
     private bool CanExecuteLogin(object? parameter)
@@ -55,7 +55,7 @@ public class LoginViewModel : ViewModelBase
         return !string.IsNullOrWhiteSpace(Username);
     }
 
-    private async void ExecuteLogin(object? parameter)
+    private async Task ExecuteLoginAsync(object? parameter)
     {
         ErrorMessage = string.Empty;
 

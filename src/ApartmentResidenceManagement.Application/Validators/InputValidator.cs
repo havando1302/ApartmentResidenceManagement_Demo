@@ -5,9 +5,10 @@ namespace ApartmentResidenceManagement.Application.Validators;
 
 public static class InputValidator
 {
-    private static readonly Regex PhoneRegex = new(@"^(0[3|5|7|8|9])+([0-9]{8})$");
-    private static readonly Regex IdentityCardRegex = new(@"^[0-9]{9}$|^[0-9]{12}$");
-    private static readonly Regex LicensePlateRegex = new(@"^[0-9]{2}[A-Z0-9]{1,2}-[0-9]{4,5}$|^[0-9]{2}[A-Z]{1,2}[0-9]{4,5}$"); // Ví dụ: 29A-12345 hoặc 29A12345
+    private const RegexOptions ValidationOptions = RegexOptions.CultureInvariant | RegexOptions.NonBacktracking;
+    private static readonly Regex PhoneRegex = new(@"^0(?:3|5|7|8|9)[0-9]{8}$", ValidationOptions);
+    private static readonly Regex IdentityCardRegex = new(@"^(?:[0-9]{9}|[0-9]{12})$", ValidationOptions);
+    private static readonly Regex LicensePlateRegex = new(@"^(?:[0-9]{2}[A-Z0-9]{1,2}-[0-9]{4,5}|[0-9]{2}[A-Z]{1,2}[0-9]{4,5})$", ValidationOptions); // Ví dụ: 29A-12345 hoặc 29A12345
 
     public static bool ValidatePhone(string? phone)
     {
@@ -31,8 +32,8 @@ public static class InputValidator
 
     public static bool ValidateDateOfBirth(DateTime dob)
     {
-        if (dob > DateTime.Now) return false;
-        if (dob < DateTime.Now.AddYears(-120)) return false; // Không sống quá 120 tuổi
+        if (dob.Date > DateTime.Today) return false;
+        if (dob.Date < DateTime.Today.AddYears(-120)) return false; // Không sống quá 120 tuổi
         return true;
     }
 }

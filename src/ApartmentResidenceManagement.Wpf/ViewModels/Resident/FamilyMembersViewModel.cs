@@ -57,10 +57,9 @@ public class FamilyMembersViewModel : ViewModelBase
     public void Initialize(UserAccount account)
     {
         _account = account;
-        _ = LoadFamilyMembersAsync();
     }
 
-    private async Task LoadFamilyMembersAsync()
+    public async Task LoadFamilyMembersAsync()
     {
         if (_account?.Resident == null)
         {
@@ -79,57 +78,20 @@ public class FamilyMembersViewModel : ViewModelBase
                 // Lấy toàn bộ cư trú hoạt động của căn hộ này
                 var list = await _residenceService.GetActiveResidencesByApartmentIdAsync(activeResidence.ApartmentId);
 
-                // Lấy thông tin chủ hộ trước để so sánh tuổi/giới tính
-                var ownerResidence = list.FirstOrDefault(x => x.RelationshipType == RelationshipType.Owner);
-                var owner = ownerResidence?.Resident;
-
                 Members.Clear();
                 foreach (var rHistory in list.OrderBy(x => x.RelationshipType))
                 {
                     var resident = rHistory.Resident;
                     if (resident == null) continue;
 
-                    string relationText = "Thành viên";
-                    if (rHistory.RelationshipType == RelationshipType.Owner)
+                    string relationText = rHistory.RelationshipType switch
                     {
-                        relationText = "Chủ hộ";
-                    }
-                    else if (rHistory.RelationshipType == RelationshipType.Tenant)
-                    {
-                        relationText = "Người ở ghép";
-                    }
-                    else if (rHistory.RelationshipType == RelationshipType.Temporary)
-                    {
-                        relationText = "Tạm trú";
-                    }
-                    else if (rHistory.RelationshipType == RelationshipType.FamilyMember && owner != null)
-                    {
-                        int ageDiff = owner.DateOfBirth.Year - resident.DateOfBirth.Year;
-                        if (owner.Gender == GenderType.Male && resident.Gender == GenderType.Female && Math.Abs(ageDiff) <= 10)
-                        {
-                            relationText = "Vợ";
-                        }
-                        else if (owner.Gender == GenderType.Female && resident.Gender == GenderType.Male && Math.Abs(ageDiff) <= 10)
-                        {
-                            relationText = "Chồng";
-                        }
-                        else if (ageDiff >= 16)
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Con trai" : "Con gái";
-                        }
-                        else if (ageDiff <= -16)
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Bố" : "Mẹ";
-                        }
-                        else if (ageDiff > 0)
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Em trai" : "Em gái";
-                        }
-                        else
-                        {
-                            relationText = resident.Gender == GenderType.Male ? "Anh trai" : "Chị gái";
-                        }
-                    }
+                        RelationshipType.Owner => "Chủ hộ",
+                        RelationshipType.FamilyMember => "Thành viên hộ gia đình",
+                        RelationshipType.Tenant => "Khách thuê",
+                        RelationshipType.Temporary => "Tạm trú",
+                        _ => "Chưa rõ"
+                    };
 
                     Members.Add(new FamilyMemberItem
                     {

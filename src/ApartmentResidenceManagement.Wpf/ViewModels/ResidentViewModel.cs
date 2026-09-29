@@ -164,16 +164,16 @@ public class ResidentViewModel : ViewModelBase
         _residentService = residentService;
         _accountService = accountService;
 
-        LoadResidentsCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadResidentsCommand = new AsyncRelayCommand(_ => LoadDataAsync());
         OpenAddFormCommand = new RelayCommand(_ => OpenAddForm());
         OpenEditFormCommand = new RelayCommand(r => { if (r is Resident res) OpenEditForm(res); });
-        SaveResidentCommand = new RelayCommand(async _ => await SaveDataAsync());
+        SaveResidentCommand = new AsyncRelayCommand(_ => SaveDataAsync());
         CancelFormCommand = new RelayCommand(_ => CloseForm());
-        DeleteResidentCommand = new RelayCommand(async r => await DeleteDataAsync(r));
+        DeleteResidentCommand = new AsyncRelayCommand(DeleteDataAsync);
 
-        OpenAccountPanelCommand = new RelayCommand(async r => { if (r is Resident res) { SelectedResident = res; await LoadAccountInfoAsync(res.Id); } });
-        CreateAccountCommand = new RelayCommand(async _ => await CreateAccountAsync());
-        ToggleAccountStatusCommand = new RelayCommand(async _ => await ToggleAccountStatusAsync());
+        OpenAccountPanelCommand = new AsyncRelayCommand(async r => { if (r is Resident res) { SelectedResident = res; await LoadAccountInfoAsync(res.Id); } });
+        CreateAccountCommand = new AsyncRelayCommand(_ => CreateAccountAsync());
+        ToggleAccountStatusCommand = new AsyncRelayCommand(_ => ToggleAccountStatusAsync());
         CloseAccountPanelCommand = new RelayCommand(_ => { IsAccountPanelOpen = false; SelectedResident = null; });
     }
 

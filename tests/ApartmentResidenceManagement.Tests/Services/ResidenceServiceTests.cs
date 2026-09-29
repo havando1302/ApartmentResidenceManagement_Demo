@@ -166,4 +166,156 @@ public class ResidenceServiceTests
         Assert.Equal(newApartmentId, result.ApartmentId);
         _mockUow.Verify(u => u.CompleteAsync(), Times.Once);
     }
+
+    [Fact]
+    public async Task TransferApartment_TargetDoesNotExist_ShouldNotMutateCurrentResidence()
+    {
+        var currentResidence = new ResidenceHistory
+        {
+            Id = 5,
+            ApartmentId = 1,
+            ResidentId = 10,
+            IsActive = true,
+            StartDate = DateTime.Today.AddMonths(-1)
+        };
+
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(10))
+            .ReturnsAsync(currentResidence);
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(2))
+            .ReturnsAsync((Apartment?)null);
+
+        await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today));
+
+        Assert.True(currentResidence.IsActive);
+        Assert.Null(currentResidence.EndDate);
+        _mockResidenceHistoryRepo.Verify(r => r.Update(It.IsAny<ResidenceHistory>()), Times.Never);
+        _mockUow.Verify(u => u.CompleteAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task TransferApartment_DateBeforeCurrentResidence_ShouldNotMutateCurrentResidence()
+    {
+        var currentResidence = new ResidenceHistory
+        {
+            Id = 5,
+            ApartmentId = 1,
+            ResidentId = 10,
+            IsActive = true,
+            StartDate = DateTime.Today.AddDays(-5)
+        };
+
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(10))
+            .ReturnsAsync(currentResidence);
+
+        await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today.AddDays(-6)));
+
+        Assert.True(currentResidence.IsActive);
+        Assert.Null(currentResidence.EndDate);
+        _mockUow.Verify(u => u.CompleteAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task RegisterResidence_OverlappingHistory_ShouldRejectOperation()
+    {
+        var apartment = new Apartment { Id = 1, ApartmentNumber = "101", Status = ApartmentStatus.Empty };
+        var resident = new Resident { Id = 10, DateOfBirth = new DateTime(1990, 1, 1) };
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(apartment);
+        _mockResidentRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(resident);
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(10)).ReturnsAsync((ResidenceHistory?)null);
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(1))
+            .ReturnsAsync(new List<ResidenceHistory>());
+        _mockResidenceHistoryRepo.Setup(r => r.GetHistoryByResidentIdAsync(10))
+            .ReturnsAsync(new List<ResidenceHistory>
+            {
+                new() { ResidentId = 10, StartDate = new DateTime(2026, 1, 1), EndDate = new DateTime(2026, 6, 30), IsActive = false }
+            });
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _service.RegisterResidenceAsync(1, 10, RelationshipType.Tenant, new DateTime(2026, 3, 1)));
+
+        Assert.Contains("chồng lấn", ex.Message);
+        Assert.Equal(ApartmentStatus.Empty, apartment.Status);
+        _mockUow.Verify(u => u.CompleteAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task TerminateResidence_WithRemainingResident_ShouldKeepApartmentOccupied()
+    {
+        var residence = new ResidenceHistory
+        {
+            Id = 5,
+            ApartmentId = 1,
+            ResidentId = 10,
+            StartDate = DateTime.Today.AddMonths(-1),
+            IsActive = true
+        };
+        var remainingResidence = new ResidenceHistory { Id = 6, ApartmentId = 1, ResidentId = 11, IsActive = true };
+        var apartment = new Apartment { Id = 1, Status = ApartmentStatus.Empty };
+        _mockResidenceHistoryRepo.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(residence);
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(1))
+            .ReturnsAsync(new List<ResidenceHistory> { residence, remainingResidence });
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(apartment);
+
+        await _service.TerminateResidenceAsync(5, DateTime.Today);
+
+        Assert.False(residence.IsActive);
+        Assert.Equal(DateTime.Today, residence.EndDate);
+        Assert.Equal(ApartmentStatus.Occupied, apartment.Status);
+    }
+
+    [Fact]
+    public async Task TransferApartment_WithRemainingResident_ShouldKeepOldApartmentOccupied()
+    {
+        var oldResidence = new ResidenceHistory
+        {
+            Id = 5,
+            ApartmentId = 1,
+            ResidentId = 10,
+            StartDate = DateTime.Today.AddMonths(-1),
+            IsActive = true
+        };
+        var oldApartment = new Apartment { Id = 1, ApartmentNumber = "101", Status = ApartmentStatus.Empty };
+        var newApartment = new Apartment { Id = 2, ApartmentNumber = "202", Status = ApartmentStatus.Empty };
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(10)).ReturnsAsync(oldResidence);
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(1))
+            .ReturnsAsync(new List<ResidenceHistory>
+            {
+                oldResidence,
+                new() { Id = 6, ApartmentId = 1, ResidentId = 11, IsActive = true }
+            });
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(2))
+            .ReturnsAsync(new List<ResidenceHistory>());
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(oldApartment);
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(2)).ReturnsAsync(newApartment);
+
+        await _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today);
+
+        Assert.Equal(ApartmentStatus.Occupied, oldApartment.Status);
+        Assert.Equal(ApartmentStatus.Occupied, newApartment.Status);
+    }
+
+    [Fact]
+    public async Task TransferApartment_TargetUnderMaintenance_ShouldNotMutateCurrentResidence()
+    {
+        var currentResidence = new ResidenceHistory
+        {
+            Id = 5,
+            ApartmentId = 1,
+            ResidentId = 10,
+            StartDate = DateTime.Today.AddMonths(-1),
+            IsActive = true
+        };
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(10)).ReturnsAsync(currentResidence);
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(2))
+            .ReturnsAsync(new Apartment { Id = 2, Status = ApartmentStatus.UnderMaintenance });
+
+        await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today));
+
+        Assert.True(currentResidence.IsActive);
+        Assert.Null(currentResidence.EndDate);
+        _mockUow.Verify(u => u.CompleteAsync(), Times.Never);
+    }
 }

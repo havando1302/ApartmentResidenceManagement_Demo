@@ -9,6 +9,7 @@ public class Vehicle
     public VehicleType VehicleType { get; set; }
     public string? Brand { get; set; }
     public int OwnerId { get; set; }
+    public VehicleRegistrationStatus RegistrationStatus { get; set; } = VehicleRegistrationStatus.Pending;
 
     // Navigation properties
     public virtual Resident Owner { get; set; } = null!;

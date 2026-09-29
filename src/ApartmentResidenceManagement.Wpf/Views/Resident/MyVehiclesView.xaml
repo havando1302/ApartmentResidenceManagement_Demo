@@ -413,6 +413,46 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
+                            <DataGridTemplateColumn Header="Trạng thái" Width="1.5*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="12" Padding="8,3" HorizontalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RegistrationStatus}" Value="{x:Static enums:VehicleRegistrationStatus.Approved}">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RegistrationStatus}" Value="{x:Static enums:VehicleRegistrationStatus.Rejected}">
+                                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontSize="12" FontWeight="SemiBold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="Chờ duyệt"/>
+                                                        <Setter Property="Foreground" Value="#E65100"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding RegistrationStatus}" Value="{x:Static enums:VehicleRegistrationStatus.Approved}">
+                                                                <Setter Property="Text" Value="Đã duyệt"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding RegistrationStatus}" Value="{x:Static enums:VehicleRegistrationStatus.Rejected}">
+                                                                <Setter Property="Text" Value="Từ chối"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
                             <!-- Thao tác (Căn giữa) -->
                             <DataGridTemplateColumn Header="Thao tác" Width="2*">
                                 <DataGridTemplateColumn.HeaderStyle>
@@ -458,8 +498,7 @@
             </Border>
 
             <!-- Card Dialog nổi ở trung tâm -->
-            <Border MaxWidth="410" Background="White" CornerRadius="10" Padding="24" Margin="16"
-                    MaxHeight="{Binding ActualHeight, ElementName=VehicleFormOverlay}"
+            <Border MaxWidth="410" Background="White" CornerRadius="10" Padding="24" Margin="16,24"
                     HorizontalAlignment="Stretch" VerticalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="15" Direction="0" ShadowDepth="0" Color="#000000" Opacity="0.15"/>

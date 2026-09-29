@@ -27,8 +27,7 @@ public class ResidentConfiguration : IEntityTypeConfiguration<Resident>
             .HasMaxLength(20);
 
         builder.HasIndex(r => r.IdentityCard)
-            .IsUnique()
-            .HasFilter("[IdentityCard] IS NOT NULL");
+            .IsUnique();
 
         builder.Property(r => r.PhoneNumber)
             .HasMaxLength(15);

@@ -33,6 +33,8 @@ public partial class App : System.Windows.Application
                 var exePath = System.AppContext.BaseDirectory;
                 builder.SetBasePath(exePath);
                 builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                builder.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+                builder.AddEnvironmentVariables();
             })
             .ConfigureServices((context, services) =>
             {
@@ -40,7 +42,7 @@ public partial class App : System.Windows.Application
                 string connectionString = context.Configuration.GetConnectionString("DefaultConnection") 
                     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
                 
-                var serverVersion = new MySqlServerVersion(new Version(8, 4, 8));
+                var serverVersion = new MySqlServerVersion(new Version(8, 0, 0));
                 services.AddDbContext<AppDbContext>(options =>
                     options.UseMySql(connectionString, serverVersion, mySqlOptions => mySqlOptions.EnableRetryOnFailure()),
                     ServiceLifetime.Transient,
@@ -92,7 +94,9 @@ public partial class App : System.Windows.Application
         {
             using var scope = _host.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            DatabaseInitializer.Initialize(dbContext);
+            bool seedDemoData = _host.Services.GetRequiredService<IConfiguration>()
+                .GetValue("Database:SeedDemoData", true);
+            await DatabaseInitializer.InitializeAsync(dbContext, seedDemoData);
         }
         catch (Exception ex)
         {
@@ -108,78 +112,59 @@ public partial class App : System.Windows.Application
 
     private void RunLoginLoop()
     {
-        // Lấy LoginWindow từ DI Container
-        var loginWindow = _host.Services.GetRequiredService<LoginWindow>();
-        var loginResult = loginWindow.ShowDialog();
-
-        if (loginResult == true)
+        while (true)
         {
-            // Đăng nhập thành công, lấy thông tin tài khoản đã xác thực
-            var loginViewModel = (LoginViewModel)loginWindow.DataContext;
-            var loggedInAccount = loginViewModel.LoggedInAccount;
-
-            if (loggedInAccount != null)
+            Domain.Entities.UserAccount? loggedInAccount;
+            using (var loginScope = _host.Services.CreateScope())
             {
-                // Lấy các con-ViewModels từ DI Container
-                var dashboardVm = _host.Services.GetRequiredService<DashboardViewModel>();
-                var apartmentVm = _host.Services.GetRequiredService<ApartmentViewModel>();
-                var residentVm = _host.Services.GetRequiredService<ResidentViewModel>();
-                var residencyVm = _host.Services.GetRequiredService<ResidencyViewModel>();
-                var vehicleVm = _host.Services.GetRequiredService<VehicleViewModel>();
-                var statisticsVm = _host.Services.GetRequiredService<StatisticsViewModel>();
-
-                var residentHomeVm = _host.Services.GetRequiredService<ResidentHomeViewModel>();
-                var myProfileVm = _host.Services.GetRequiredService<MyProfileViewModel>();
-                var myApartmentVm = _host.Services.GetRequiredService<MyApartmentViewModel>();
-                var familyMembersVm = _host.Services.GetRequiredService<FamilyMembersViewModel>();
-                var myVehiclesVm = _host.Services.GetRequiredService<MyVehiclesViewModel>();
-                var residencyHistoryVm = _host.Services.GetRequiredService<ResidencyHistoryViewModel>();
-
-                // Khởi tạo MainWindow trước để có thể truyền action đóng cửa sổ
-                var mainWindow = new MainWindow(null!); // sẽ gán DataContext sau
-                
-                // Khởi tạo MainViewModel động dựa trên tài khoản đăng nhập thành công
-                var mainViewModel = new MainViewModel(
-                    loggedInAccount, 
-                    dashboardVm, 
-                    apartmentVm, 
-                    residentVm, 
-                    residencyVm, 
-                    vehicleVm, 
-                    statisticsVm,
-                    residentHomeVm,
-                    myProfileVm,
-                    myApartmentVm,
-                    familyMembersVm,
-                    myVehiclesVm,
-                    residencyHistoryVm,
-                    onLogout: () =>
-                    {
-                        // Đăng xuất: đặt DialogResult = false để RunLoginLoop nhận biết và mở lại LoginWindow
-                        mainWindow.DialogResult = false;
-                        mainWindow.Close();
-                    });
-
-                mainWindow.DataContext = mainViewModel;
-                
-                var mainResult = mainWindow.ShowDialog();
-
-                if (mainResult == false)
+                var loginWindow = loginScope.ServiceProvider.GetRequiredService<LoginWindow>();
+                if (loginWindow.ShowDialog() != true)
                 {
-                    // Người dùng bấm Đăng xuất (Logout), mở lại vòng lặp đăng nhập
-                    RunLoginLoop();
-                }
-                else
-                {
-                    // Đóng bình thường
                     Shutdown();
+                    return;
                 }
+
+                loggedInAccount = ((LoginViewModel)loginWindow.DataContext).LoggedInAccount;
             }
-        }
-        else
-        {
-            // Đóng cửa sổ đăng nhập mà không đăng nhập thành công (Thoát ứng dụng)
-            Shutdown();
+
+            if (loggedInAccount == null)
+            {
+                Shutdown();
+                return;
+            }
+
+            // Mỗi phiên đăng nhập có DI scope riêng, giúp giải phóng DbContext khi đăng xuất.
+            using var sessionScope = _host.Services.CreateScope();
+            var services = sessionScope.ServiceProvider;
+            var mainWindow = new MainWindow();
+            var mainViewModel = new MainViewModel(
+                loggedInAccount,
+                services.GetRequiredService<DashboardViewModel>(),
+                services.GetRequiredService<ApartmentViewModel>(),
+                services.GetRequiredService<ResidentViewModel>(),
+                services.GetRequiredService<ResidencyViewModel>(),
+                services.GetRequiredService<VehicleViewModel>(),
+                services.GetRequiredService<StatisticsViewModel>(),
+                services.GetRequiredService<ResidentHomeViewModel>(),
+                services.GetRequiredService<MyProfileViewModel>(),
+                services.GetRequiredService<MyApartmentViewModel>(),
+                services.GetRequiredService<FamilyMembersViewModel>(),
+                services.GetRequiredService<MyVehiclesViewModel>(),
+                services.GetRequiredService<ResidencyHistoryViewModel>(),
+                onLogout: () =>
+                {
+                    mainWindow.DialogResult = false;
+                    mainWindow.Close();
+                });
+
+            mainWindow.DataContext = mainViewModel;
+
+            // false là đăng xuất; null là người dùng đóng cửa sổ và muốn thoát ứng dụng.
+            if (mainWindow.ShowDialog() != false)
+            {
+                Shutdown();
+                return;
+            }
         }
     }
 

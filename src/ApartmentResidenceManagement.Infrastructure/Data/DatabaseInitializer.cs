@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using ApartmentResidenceManagement.Domain.Entities;
 using ApartmentResidenceManagement.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -8,14 +9,21 @@ namespace ApartmentResidenceManagement.Infrastructure.Data;
 
 public static class DatabaseInitializer
 {
-    public static void Initialize(AppDbContext context)
+    public static async Task InitializeAsync(AppDbContext context, bool seedDemoData = true)
     {
         // Đảm bảo database đã được tạo và chạy migration
-        context.Database.Migrate();
+        await context.Database.MigrateAsync();
+
+        if (!seedDemoData)
+        {
+            await SynchronizeApartmentStatusesAsync(context);
+            return;
+        }
 
         // Chỉ seed dữ liệu khi bảng UserAccounts chưa có dữ liệu (lần đầu khởi động)
-        if (context.UserAccounts.Any())
+        if (await context.UserAccounts.AnyAsync())
         {
+            await SynchronizeApartmentStatusesAsync(context);
             return; // Đã có dữ liệu, không cần seed lại
         }
 
@@ -69,7 +77,7 @@ public static class DatabaseInitializer
             new Apartment { ApartmentNumber = "1003", Floor = 10, Area = 105.5, Status = ApartmentStatus.Empty }
         };
         context.Apartments.AddRange(apartments);
-        context.SaveChanges();
+        await context.SaveChangesAsync();
 
         // 3.2. Cư dân mẫu (Resident)
         var residents = new[]
@@ -134,7 +142,7 @@ public static class DatabaseInitializer
             new Resident { FullName = "Trần Văn E3", DateOfBirth = new DateTime(1996, 2, 28), Gender = GenderType.Male, IdentityCard = "001096012395", PhoneNumber = "0912345651", HomeTown = "Hà Nam" } // index 54
         };
         context.Residents.AddRange(residents);
-        context.SaveChanges();
+        await context.SaveChangesAsync();
 
         // 3.3. Tài khoản mẫu (UserAccount)
         // Băm mật khẩu bằng BCrypt
@@ -169,7 +177,7 @@ public static class DatabaseInitializer
             }
         };
         context.UserAccounts.AddRange(userAccounts);
-        context.SaveChanges();
+        await context.SaveChangesAsync();
 
         // 3.4. Lịch sử cư trú mẫu (ResidenceHistory)
         var residenceHistories = new[]
@@ -274,7 +282,7 @@ public static class DatabaseInitializer
             new ResidenceHistory { ApartmentId = apartments[0].Id, ResidentId = residents[2].Id, RelationshipType = RelationshipType.Tenant, StartDate = new DateTime(2024, 1, 1), EndDate = new DateTime(2024, 12, 31), IsActive = false }
         };
         context.ResidenceHistories.AddRange(residenceHistories);
-        context.SaveChanges();
+        await context.SaveChangesAsync();
 
         // 3.5. Phương tiện mẫu (Vehicle)
         // Phân bổ hợp lý theo quy mô hộ và căn hộ
@@ -377,8 +385,45 @@ public static class DatabaseInitializer
             new Vehicle { LicensePlate = "29A1-10014", VehicleType = VehicleType.Moto, Brand = "Honda",   OwnerId = residents[51].Id },
             new Vehicle { LicensePlate = "29A1-10015", VehicleType = VehicleType.Bicycle, Brand = "Trek", OwnerId = residents[52].Id },
         };
-        context.Vehicles.AddRange(vehicles);
-        context.SaveChanges();
+        foreach (var vehicle in vehicles)
+        {
+            vehicle.RegistrationStatus = VehicleRegistrationStatus.Approved;
+        }
 
+        context.Vehicles.AddRange(vehicles);
+        await context.SaveChangesAsync();
+
+        await SynchronizeApartmentStatusesAsync(context);
+    }
+
+    private static async Task SynchronizeApartmentStatusesAsync(AppDbContext context)
+    {
+        var activeApartmentIds = await context.ResidenceHistories
+            .Where(residence => residence.IsActive)
+            .Select(residence => residence.ApartmentId)
+            .Distinct()
+            .ToHashSetAsync();
+
+        var apartments = await context.Apartments.ToListAsync();
+        var hasChanges = false;
+        foreach (var apartment in apartments)
+        {
+            var expectedStatus = activeApartmentIds.Contains(apartment.Id)
+                ? ApartmentStatus.Occupied
+                : apartment.Status == ApartmentStatus.UnderMaintenance
+                    ? ApartmentStatus.UnderMaintenance
+                    : ApartmentStatus.Empty;
+
+            if (apartment.Status != expectedStatus)
+            {
+                apartment.Status = expectedStatus;
+                hasChanges = true;
+            }
+        }
+
+        if (hasChanges)
+        {
+            await context.SaveChangesAsync();
+        }
     }
 }

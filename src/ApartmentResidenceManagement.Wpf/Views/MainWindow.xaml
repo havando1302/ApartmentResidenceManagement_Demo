@@ -372,9 +372,11 @@
             <!-- Topbar -->
             <Border Grid.Row="0" Background="White" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderBrush}">
                 <Grid Margin="32,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="👋 Xin chào, " FontSize="16" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding FullName}" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextDarkBrush}"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding WelcomeMessage}" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextDarkBrush}"/>
+                        <TextBlock Text="{Binding RoleMessage}" FontSize="12"
+                                   Foreground="{StaticResource TextMutedBrush}" Margin="0,3,0,0"/>
                     </StackPanel>
                     <TextBlock Text="RMS v1.0" FontSize="12" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                 </Grid>

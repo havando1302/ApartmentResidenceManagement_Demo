@@ -30,15 +30,20 @@ public class ResidentService
 
     public async Task<Resident?> GetResidentByIdentityCardAsync(string identityCard)
     {
-        return await _unitOfWork.Residents.GetByIdentityCardAsync(identityCard);
+        if (string.IsNullOrWhiteSpace(identityCard)) return null;
+        return await _unitOfWork.Residents.GetByIdentityCardAsync(identityCard.Trim());
     }
 
     public async Task<Resident> CreateResidentAsync(Resident resident)
     {
+        Normalize(resident);
+
         if (string.IsNullOrWhiteSpace(resident.FullName))
         {
             throw new BusinessRuleException("Họ và tên cư dân không được để trống.");
         }
+
+        ValidateFieldLengthsAndGender(resident);
 
         if (!InputValidator.ValidateDateOfBirth(resident.DateOfBirth))
         {
@@ -74,6 +79,8 @@ public class ResidentService
 
     public async Task UpdateResidentAsync(Resident resident)
     {
+        Normalize(resident);
+
         var existing = await _unitOfWork.Residents.GetByIdAsync(resident.Id);
         if (existing == null)
         {
@@ -84,6 +91,8 @@ public class ResidentService
         {
             throw new BusinessRuleException("Họ và tên cư dân không được để trống.");
         }
+
+        ValidateFieldLengthsAndGender(resident);
 
         if (!InputValidator.ValidateDateOfBirth(resident.DateOfBirth))
         {
@@ -106,7 +115,7 @@ public class ResidentService
             if (existing.IdentityCard != resident.IdentityCard)
             {
                 var duplicate = await _unitOfWork.Residents.GetByIdentityCardAsync(resident.IdentityCard);
-                if (duplicate != null)
+                if (duplicate != null && duplicate.Id != existing.Id)
                 {
                     throw new BusinessRuleException($"Số CCCD/CMND '{resident.IdentityCard}' đã được đăng ký bởi cư dân khác.");
                 }
@@ -148,5 +157,37 @@ public class ResidentService
 
         _unitOfWork.Residents.Delete(resident);
         await _unitOfWork.CompleteAsync();
+    }
+
+    private static void Normalize(Resident resident)
+    {
+        resident.FullName = resident.FullName?.Trim() ?? string.Empty;
+        resident.DateOfBirth = resident.DateOfBirth.Date;
+        resident.IdentityCard = NormalizeOptional(resident.IdentityCard);
+        resident.PhoneNumber = NormalizeOptional(resident.PhoneNumber);
+        resident.HomeTown = NormalizeOptional(resident.HomeTown);
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static void ValidateFieldLengthsAndGender(Resident resident)
+    {
+        if (resident.FullName.Length > 100)
+        {
+            throw new BusinessRuleException("Họ và tên không được vượt quá 100 ký tự.");
+        }
+
+        if (resident.HomeTown?.Length > 200)
+        {
+            throw new BusinessRuleException("Quê quán không được vượt quá 200 ký tự.");
+        }
+
+        if (!Enum.IsDefined(resident.Gender))
+        {
+            throw new BusinessRuleException("Giới tính không hợp lệ.");
+        }
     }
 }

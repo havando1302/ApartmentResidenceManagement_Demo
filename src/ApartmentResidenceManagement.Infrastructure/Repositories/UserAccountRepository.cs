@@ -15,6 +15,7 @@ public class UserAccountRepository : Repository<UserAccount>, IUserAccountReposi
     public async Task<UserAccount?> GetByUsernameAsync(string username)
     {
         return await DbSet
+            .AsNoTracking()
             .Include(ua => ua.Resident)
             .FirstOrDefaultAsync(ua => ua.Username == username);
     }
@@ -22,6 +23,7 @@ public class UserAccountRepository : Repository<UserAccount>, IUserAccountReposi
     public async Task<UserAccount?> GetByResidentIdAsync(int residentId)
     {
         return await DbSet
+            .AsNoTracking()
             .FirstOrDefaultAsync(ua => ua.ResidentId == residentId);
     }
 }

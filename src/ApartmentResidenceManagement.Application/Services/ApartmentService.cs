@@ -30,14 +30,22 @@ public class ApartmentService
 
     public async Task<Apartment?> GetApartmentByNumberAsync(string apartmentNumber)
     {
-        return await _unitOfWork.Apartments.GetByApartmentNumberAsync(apartmentNumber);
+        if (string.IsNullOrWhiteSpace(apartmentNumber)) return null;
+        return await _unitOfWork.Apartments.GetByApartmentNumberAsync(apartmentNumber.Trim().ToUpperInvariant());
     }
 
     public async Task<Apartment> CreateApartmentAsync(Apartment apartment)
     {
+        apartment.ApartmentNumber = apartment.ApartmentNumber?.Trim().ToUpperInvariant() ?? string.Empty;
+
         if (string.IsNullOrWhiteSpace(apartment.ApartmentNumber))
         {
             throw new BusinessRuleException("Số căn hộ không được để trống.");
+        }
+
+        if (apartment.ApartmentNumber.Length > 20)
+        {
+            throw new BusinessRuleException("Số căn hộ không được vượt quá 20 ký tự.");
         }
 
         var existing = await _unitOfWork.Apartments.GetByApartmentNumberAsync(apartment.ApartmentNumber);
@@ -51,7 +59,7 @@ public class ApartmentService
             throw new BusinessRuleException("Số tầng phải lớn hơn 0.");
         }
 
-        if (apartment.Area <= 0)
+        if (!double.IsFinite(apartment.Area) || apartment.Area <= 0)
         {
             throw new BusinessRuleException("Diện tích căn hộ phải lớn hơn 0.");
         }
@@ -66,6 +74,23 @@ public class ApartmentService
 
     public async Task UpdateApartmentAsync(Apartment apartment)
     {
+        apartment.ApartmentNumber = apartment.ApartmentNumber?.Trim().ToUpperInvariant() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(apartment.ApartmentNumber))
+        {
+            throw new BusinessRuleException("Số căn hộ không được để trống.");
+        }
+
+        if (apartment.ApartmentNumber.Length > 20)
+        {
+            throw new BusinessRuleException("Số căn hộ không được vượt quá 20 ký tự.");
+        }
+
+        if (!Enum.IsDefined(apartment.Status))
+        {
+            throw new BusinessRuleException("Trạng thái căn hộ không hợp lệ.");
+        }
+
         var existing = await _unitOfWork.Apartments.GetByIdAsync(apartment.Id);
         if (existing == null)
         {
@@ -76,7 +101,7 @@ public class ApartmentService
         if (existing.ApartmentNumber != apartment.ApartmentNumber)
         {
             var duplicate = await _unitOfWork.Apartments.GetByApartmentNumberAsync(apartment.ApartmentNumber);
-            if (duplicate != null)
+            if (duplicate != null && duplicate.Id != existing.Id)
             {
                 throw new BusinessRuleException($"Số căn hộ '{apartment.ApartmentNumber}' đã được sử dụng bởi căn hộ khác.");
             }
@@ -87,19 +112,22 @@ public class ApartmentService
             throw new BusinessRuleException("Số tầng phải lớn hơn 0.");
         }
 
-        if (apartment.Area <= 0)
+        if (!double.IsFinite(apartment.Area) || apartment.Area <= 0)
         {
             throw new BusinessRuleException("Diện tích căn hộ phải lớn hơn 0.");
         }
 
-        // Không được phép đổi trạng thái về Empty nếu có cư dân hoạt động
-        if (apartment.Status == ApartmentStatus.Empty || apartment.Status == ApartmentStatus.UnderMaintenance)
+        // Occupied phải phản ánh dữ liệu cư trú, không phải trạng thái nhập tay độc lập.
+        var activeResidences = await _unitOfWork.ResidenceHistories.GetActiveByApartmentIdAsync(apartment.Id);
+        var hasActiveResidents = activeResidences.Any();
+        if (hasActiveResidents && apartment.Status != ApartmentStatus.Occupied)
         {
-            var activeResidences = await _unitOfWork.ResidenceHistories.GetActiveByApartmentIdAsync(apartment.Id);
-            if (activeResidences.Any())
-            {
-                throw new BusinessRuleException($"Không thể chuyển trạng thái căn hộ sang '{apartment.Status}' khi vẫn còn cư dân đang hoạt động.");
-            }
+            throw new BusinessRuleException("Căn hộ còn cư dân đang ở nên trạng thái phải là 'Đang có người ở'.");
+        }
+
+        if (!hasActiveResidents && apartment.Status == ApartmentStatus.Occupied)
+        {
+            throw new BusinessRuleException("Không thể đặt căn hộ là 'Đang có người ở' khi chưa có cư trú hoạt động.");
         }
 
         existing.ApartmentNumber = apartment.ApartmentNumber;

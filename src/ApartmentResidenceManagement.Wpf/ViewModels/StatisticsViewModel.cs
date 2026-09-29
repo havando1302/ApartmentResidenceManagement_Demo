@@ -168,7 +168,7 @@ public class StatisticsViewModel : ViewModelBase
         _residenceService = residenceService;
         _vehicleService = vehicleService;
 
-        RefreshCommand = new RelayCommand(async _ => await LoadStatisticsAsync());
+        RefreshCommand = new AsyncRelayCommand(_ => LoadStatisticsAsync());
     }
 
     public async Task LoadStatisticsAsync()
@@ -196,7 +196,9 @@ public class StatisticsViewModel : ViewModelBase
             ActiveResidentsCount = residences.Count(rh => rh.IsActive);
 
             // 4. Thống kê Phương tiện
-            var vehicles = (await _vehicleService.GetAllVehiclesAsync()).ToList();
+            var vehicles = (await _vehicleService.GetAllVehiclesAsync())
+                .Where(v => v.RegistrationStatus == VehicleRegistrationStatus.Approved)
+                .ToList();
             TotalVehicles = vehicles.Count;
             MotorbikesCount = vehicles.Count(v => v.VehicleType == VehicleType.Moto);
             CarsCount = vehicles.Count(v => v.VehicleType == VehicleType.Car);

@@ -36,7 +36,9 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> CompleteAsync()
     {
-        return await _context.SaveChangesAsync();
+        var affectedRows = await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+        return affectedRows;
     }
 
     public void Dispose()

@@ -74,10 +74,9 @@ public class MyApartmentViewModel : ViewModelBase
     public void Initialize(UserAccount account)
     {
         _account = account;
-        _ = LoadApartmentDataAsync();
     }
 
-    private async Task LoadApartmentDataAsync()
+    public async Task LoadApartmentDataAsync()
     {
         if (_account?.Resident == null)
         {

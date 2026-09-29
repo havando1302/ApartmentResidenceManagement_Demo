@@ -158,8 +158,7 @@ namespace ApartmentResidenceManagement.Infrastructure.Migrations
                 name: "IX_Residents_IdentityCard",
                 table: "Residents",
                 column: "IdentityCard",
-                unique: true,
-                filter: "[IdentityCard] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserAccounts_ResidentId",

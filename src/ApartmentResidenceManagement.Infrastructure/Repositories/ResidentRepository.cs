@@ -17,12 +17,14 @@ public class ResidentRepository : Repository<Resident>, IResidentRepository
     public async Task<Resident?> GetByIdentityCardAsync(string identityCard)
     {
         return await DbSet
+            .AsNoTracking()
             .FirstOrDefaultAsync(r => r.IdentityCard == identityCard);
     }
 
     public async Task<IEnumerable<Resident>> GetResidentsByApartmentIdAsync(int apartmentId)
     {
         return await Context.ResidenceHistories
+            .AsNoTracking()
             .Where(rh => rh.ApartmentId == apartmentId && rh.IsActive)
             .Select(rh => rh.Resident)
             .ToListAsync();

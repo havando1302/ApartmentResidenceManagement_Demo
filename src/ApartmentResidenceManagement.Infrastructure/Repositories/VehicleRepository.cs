@@ -17,12 +17,14 @@ public class VehicleRepository : Repository<Vehicle>, IVehicleRepository
     public async Task<Vehicle?> GetByLicensePlateAsync(string licensePlate)
     {
         return await DbSet
+            .AsNoTracking()
             .FirstOrDefaultAsync(v => v.LicensePlate == licensePlate);
     }
 
     public async Task<IEnumerable<Vehicle>> GetVehiclesByOwnerIdAsync(int ownerId)
     {
         return await DbSet
+            .AsNoTracking()
             .Where(v => v.OwnerId == ownerId)
             .ToListAsync();
     }
@@ -30,6 +32,7 @@ public class VehicleRepository : Repository<Vehicle>, IVehicleRepository
     public async Task<IEnumerable<Vehicle>> GetAllWithDetailsAsync()
     {
         return await DbSet
+            .AsNoTracking()
             .Include(v => v.Owner)
             .ToListAsync();
     }

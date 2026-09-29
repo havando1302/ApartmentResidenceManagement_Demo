@@ -23,6 +23,14 @@ public class VehicleItem
     public string OwnerName => Vehicle.Owner?.FullName ?? "Chưa rõ";
     public string OwnerIdentityCard => Vehicle.Owner?.IdentityCard ?? "Chưa rõ";
     public string ApartmentNumber { get; set; } = "Chưa rõ";
+    public VehicleRegistrationStatus RegistrationStatus => Vehicle.RegistrationStatus;
+    public string RegistrationStatusText => RegistrationStatus switch
+    {
+        VehicleRegistrationStatus.Pending => "Chờ duyệt",
+        VehicleRegistrationStatus.Approved => "Đã duyệt",
+        VehicleRegistrationStatus.Rejected => "Từ chối",
+        _ => "Không hợp lệ"
+    };
 
     public Vehicle Vehicle { get; }
 
@@ -159,6 +167,8 @@ public class VehicleViewModel : ViewModelBase
     public ICommand SaveVehicleCommand { get; }
     public ICommand CancelFormCommand { get; }
     public ICommand DeleteVehicleCommand { get; }
+    public ICommand ApproveVehicleCommand { get; }
+    public ICommand RejectVehicleCommand { get; }
     #endregion
 
     public VehicleViewModel(VehicleService vehicleService, ResidentService residentService, ResidenceService residenceService)
@@ -167,12 +177,14 @@ public class VehicleViewModel : ViewModelBase
         _residentService = residentService;
         _residenceService = residenceService;
 
-        LoadVehiclesCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadVehiclesCommand = new AsyncRelayCommand(_ => LoadDataAsync());
         OpenAddFormCommand = new RelayCommand(_ => OpenAddForm());
         OpenEditFormCommand = new RelayCommand(v => { if (v is VehicleItem item) OpenEditForm(item); });
-        SaveVehicleCommand = new RelayCommand(async _ => await SaveVehicleAsync());
+        SaveVehicleCommand = new AsyncRelayCommand(_ => SaveVehicleAsync());
         CancelFormCommand = new RelayCommand(_ => CloseForm());
-        DeleteVehicleCommand = new RelayCommand(async v => await DeleteVehicleAsync(v));
+        DeleteVehicleCommand = new AsyncRelayCommand(DeleteVehicleAsync);
+        ApproveVehicleCommand = new AsyncRelayCommand(p => ReviewVehicleAsync(p, VehicleRegistrationStatus.Approved));
+        RejectVehicleCommand = new AsyncRelayCommand(p => ReviewVehicleAsync(p, VehicleRegistrationStatus.Rejected));
     }
 
     public async Task LoadDataAsync()
@@ -273,7 +285,8 @@ public class VehicleViewModel : ViewModelBase
             LicensePlate = item.Vehicle.LicensePlate,
             VehicleType = item.Vehicle.VehicleType,
             Brand = item.Vehicle.Brand,
-            OwnerId = item.Vehicle.OwnerId
+            OwnerId = item.Vehicle.OwnerId,
+            RegistrationStatus = item.Vehicle.RegistrationStatus
         };
         IsFormOpen = true;
     }
@@ -355,6 +368,26 @@ public class VehicleViewModel : ViewModelBase
         catch (Exception)
         {
             ErrorMessage = "Lỗi hệ thống khi xóa phương tiện.";
+        }
+    }
+
+    private async Task ReviewVehicleAsync(object? parameter, VehicleRegistrationStatus status)
+    {
+        if (parameter is not VehicleItem item) return;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            await _vehicleService.ReviewVehicleAsync(item.Id, status);
+            await LoadDataAsync();
+        }
+        catch (BusinessRuleException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Lỗi hệ thống khi duyệt phương tiện.";
         }
     }
 }

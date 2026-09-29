@@ -260,7 +260,7 @@
                 </Border.InputBindings>
             </Border>
 
-            <Border MaxWidth="440" Margin="16" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Grid}}"
+            <Border MaxWidth="440" Margin="16,24"
                     Background="{StaticResource CardBgBrush}" CornerRadius="{StaticResource RadiusLarge}" Padding="24" HorizontalAlignment="Stretch" VerticalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="30" Direction="270" ShadowDepth="10" Color="#000000" Opacity="0.15"/>

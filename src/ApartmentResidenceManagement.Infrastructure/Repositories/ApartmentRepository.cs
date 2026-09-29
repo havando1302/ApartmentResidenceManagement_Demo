@@ -15,6 +15,7 @@ public class ApartmentRepository : Repository<Apartment>, IApartmentRepository
     public async Task<Apartment?> GetByApartmentNumberAsync(string apartmentNumber)
     {
         return await DbSet
+            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.ApartmentNumber == apartmentNumber);
     }
 }

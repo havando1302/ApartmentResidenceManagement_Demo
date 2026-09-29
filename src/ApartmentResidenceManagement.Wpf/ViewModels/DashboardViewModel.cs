@@ -72,7 +72,8 @@ public class DashboardViewModel : ViewModelBase
             TotalResidents = residents.Count();
 
             var vehicles = await _vehicleService.GetAllVehiclesAsync();
-            TotalVehicles = vehicles.Count();
+            TotalVehicles = vehicles.Count(v =>
+                v.RegistrationStatus == Domain.Enums.VehicleRegistrationStatus.Approved);
         }
         catch
         {

@@ -518,7 +518,7 @@
             </Border>
 
             <!-- Card Dialog nổi ở trung tâm -->
-            <Border MaxWidth="420" Margin="16" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Grid}}"
+            <Border MaxWidth="420" Margin="16,24"
                     Background="White" CornerRadius="10" Padding="24"
                     HorizontalAlignment="Stretch" VerticalAlignment="Center">
                 <Border.Effect>
