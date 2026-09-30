@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ApartmentResidenceManagement.Application.Common;
 using ApartmentResidenceManagement.Domain.Entities;
 using ApartmentResidenceManagement.Domain.Enums;
-using ApartmentResidenceManagement.Domain.Exceptions;
 using ApartmentResidenceManagement.Domain.Interfaces;
 using ApartmentResidenceManagement.Application.Services;
 using Moq;
@@ -30,6 +30,9 @@ public class ResidenceServiceTests
         _mockUow.Setup(u => u.Apartments).Returns(_mockApartmentRepo.Object);
         _mockUow.Setup(u => u.Residents).Returns(_mockResidentRepo.Object);
         _mockUow.Setup(u => u.ResidenceHistories).Returns(_mockResidenceHistoryRepo.Object);
+        _mockUow
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task<OperationResult<ResidenceHistory>>>>()))
+            .Returns((Func<Task<OperationResult<ResidenceHistory>>> operation) => operation());
 
         _service = new ResidenceService(_mockUow.Object);
     }
@@ -52,17 +55,18 @@ public class ResidenceServiceTests
         var result = await _service.RegisterResidenceAsync(apartmentId, residentId, RelationshipType.Owner, DateTime.Now);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(apartmentId, result.ApartmentId);
-        Assert.Equal(residentId, result.ResidentId);
-        Assert.Equal(RelationshipType.Owner, result.RelationshipType);
-        Assert.True(result.IsActive);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(apartmentId, result.Value.ApartmentId);
+        Assert.Equal(residentId, result.Value.ResidentId);
+        Assert.Equal(RelationshipType.Owner, result.Value.RelationshipType);
+        Assert.True(result.Value.IsActive);
         Assert.Equal(ApartmentStatus.Occupied, apartment.Status); // Căn hộ phải đổi sang Occupied
         _mockUow.Verify(u => u.CompleteAsync(), Times.Once);
     }
 
     [Fact]
-    public async Task RegisterResidence_ResidentAlreadyHasActiveResidence_ShouldThrowBusinessRuleException()
+    public async Task RegisterResidence_ResidentAlreadyHasActiveResidence_ReturnsFailure()
     {
         // Arrange
         int apartmentId = 1;
@@ -81,15 +85,15 @@ public class ResidenceServiceTests
         _mockResidentRepo.Setup(r => r.GetByIdAsync(residentId)).ReturnsAsync(resident);
         _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(residentId)).ReturnsAsync(existingActive);
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => 
-            _service.RegisterResidenceAsync(apartmentId, residentId, RelationshipType.Tenant, DateTime.Now));
-        
-        Assert.Contains("hiện đang cư trú hoạt động tại căn hộ", ex.Message);
+        var result = await _service.RegisterResidenceAsync(
+            apartmentId, residentId, RelationshipType.Tenant, DateTime.Now);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("hiện đang cư trú tại căn hộ", result.ErrorMessage);
     }
 
     [Fact]
-    public async Task RegisterResidence_ApartmentUnderMaintenance_ShouldThrowBusinessRuleException()
+    public async Task RegisterResidence_ApartmentUnderMaintenance_ReturnsFailure()
     {
         // Arrange
         int apartmentId = 1;
@@ -98,15 +102,15 @@ public class ResidenceServiceTests
 
         _mockApartmentRepo.Setup(r => r.GetByIdAsync(apartmentId)).ReturnsAsync(apartment);
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => 
-            _service.RegisterResidenceAsync(apartmentId, residentId, RelationshipType.Owner, DateTime.Now));
+        var result = await _service.RegisterResidenceAsync(
+            apartmentId, residentId, RelationshipType.Owner, DateTime.Now);
 
-        Assert.Contains("đang sửa chữa", ex.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("đang sửa chữa", result.ErrorMessage);
     }
 
     [Fact]
-    public async Task RegisterResidence_AddSecondOwnerToSameApartment_ShouldThrowBusinessRuleException()
+    public async Task RegisterResidence_AddSecondOwnerToSameApartment_ReturnsFailure()
     {
         // Arrange
         int apartmentId = 1;
@@ -120,11 +124,11 @@ public class ResidenceServiceTests
         _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(residentId)).ReturnsAsync((ResidenceHistory?)null);
         _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(apartmentId)).ReturnsAsync(new List<ResidenceHistory> { existingOwner });
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => 
-            _service.RegisterResidenceAsync(apartmentId, residentId, RelationshipType.Owner, DateTime.Now));
+        var result = await _service.RegisterResidenceAsync(
+            apartmentId, residentId, RelationshipType.Owner, DateTime.Now);
 
-        Assert.Contains("đã có Chủ hộ đang hoạt động", ex.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("đã có Chủ hộ", result.ErrorMessage);
     }
 
     [Fact]
@@ -152,6 +156,18 @@ public class ResidenceServiceTests
         _mockApartmentRepo.Setup(r => r.GetByIdAsync(oldApartmentId)).ReturnsAsync(oldApartment);
         _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(oldApartmentId)).ReturnsAsync(new List<ResidenceHistory> { oldActiveResidence });
         _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(newApartmentId)).ReturnsAsync(new List<ResidenceHistory>());
+        var persistenceOrder = new List<string>();
+        _mockResidenceHistoryRepo
+            .Setup(r => r.Update(oldActiveResidence))
+            .Callback(() => persistenceOrder.Add("close-old"));
+        _mockUow
+            .Setup(u => u.CompleteAsync())
+            .Callback(() => persistenceOrder.Add("save"))
+            .ReturnsAsync(1);
+        _mockResidenceHistoryRepo
+            .Setup(r => r.AddAsync(It.IsAny<ResidenceHistory>()))
+            .Callback(() => persistenceOrder.Add("open-new"))
+            .Returns(Task.CompletedTask);
 
         // Act
         var result = await _service.TransferApartmentAsync(residentId, newApartmentId, RelationshipType.Owner, DateTime.Now);
@@ -161,10 +177,60 @@ public class ResidenceServiceTests
         Assert.NotNull(oldActiveResidence.EndDate);
         Assert.Equal(ApartmentStatus.Empty, oldApartment.Status); // Căn hộ cũ không còn ai ở
         Assert.Equal(ApartmentStatus.Occupied, newApartment.Status); // Căn hộ mới có người ở
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.IsActive);
+        Assert.Equal(newApartmentId, result.Value.ApartmentId);
+        Assert.Equal(new[] { "close-old", "save", "open-new", "save" }, persistenceOrder);
+        _mockUow.Verify(
+            u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task<OperationResult<ResidenceHistory>>>>()),
+            Times.Once);
+        _mockUow.Verify(u => u.CompleteAsync(), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task TransferApartment_TargetAlreadyHasOwner_ReturnsFailureWithoutThrowing()
+    {
+        var currentResidence = new ResidenceHistory
+        {
+            Id = 5,
+            ApartmentId = 1,
+            ResidentId = 10,
+            IsActive = true,
+            StartDate = DateTime.Today.AddMonths(-1)
+        };
+        var targetApartment = new Apartment
+        {
+            Id = 2,
+            ApartmentNumber = "202",
+            Status = ApartmentStatus.Occupied
+        };
+        var targetOwner = new ResidenceHistory
+        {
+            Id = 6,
+            ApartmentId = 2,
+            ResidentId = 11,
+            RelationshipType = RelationshipType.Owner,
+            IsActive = true
+        };
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(10))
+            .ReturnsAsync(currentResidence);
+        _mockApartmentRepo.Setup(r => r.GetByIdAsync(2)).ReturnsAsync(targetApartment);
+        _mockResidenceHistoryRepo.Setup(r => r.GetActiveByApartmentIdAsync(2))
+            .ReturnsAsync(new List<ResidenceHistory> { targetOwner });
+
+        OperationResult<ResidenceHistory>? result = null;
+        var escapedException = await Record.ExceptionAsync(async () =>
+            result = await _service.TransferApartmentAsync(
+                10, 2, RelationshipType.Owner, DateTime.Today));
+
+        Assert.Null(escapedException);
         Assert.NotNull(result);
-        Assert.True(result.IsActive);
-        Assert.Equal(newApartmentId, result.ApartmentId);
-        _mockUow.Verify(u => u.CompleteAsync(), Times.Once);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("đã có sẵn Chủ hộ", result.ErrorMessage);
+        Assert.True(currentResidence.IsActive);
+        _mockResidenceHistoryRepo.Verify(r => r.Update(It.IsAny<ResidenceHistory>()), Times.Never);
+        _mockUow.Verify(u => u.CompleteAsync(), Times.Never);
     }
 
     [Fact]
@@ -184,9 +250,11 @@ public class ResidenceServiceTests
         _mockApartmentRepo.Setup(r => r.GetByIdAsync(2))
             .ReturnsAsync((Apartment?)null);
 
-        await Assert.ThrowsAsync<BusinessRuleException>(() =>
-            _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today));
+        var result = await _service.TransferApartmentAsync(
+            10, 2, RelationshipType.Tenant, DateTime.Today);
 
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Không tìm thấy căn hộ mới", result.ErrorMessage);
         Assert.True(currentResidence.IsActive);
         Assert.Null(currentResidence.EndDate);
         _mockResidenceHistoryRepo.Verify(r => r.Update(It.IsAny<ResidenceHistory>()), Times.Never);
@@ -208,9 +276,11 @@ public class ResidenceServiceTests
         _mockResidenceHistoryRepo.Setup(r => r.GetActiveByResidentIdAsync(10))
             .ReturnsAsync(currentResidence);
 
-        await Assert.ThrowsAsync<BusinessRuleException>(() =>
-            _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today.AddDays(-6)));
+        var result = await _service.TransferApartmentAsync(
+            10, 2, RelationshipType.Tenant, DateTime.Today.AddDays(-6));
 
+        Assert.False(result.IsSuccess);
+        Assert.Contains("nhỏ hơn ngày bắt đầu", result.ErrorMessage);
         Assert.True(currentResidence.IsActive);
         Assert.Null(currentResidence.EndDate);
         _mockUow.Verify(u => u.CompleteAsync(), Times.Never);
@@ -232,10 +302,11 @@ public class ResidenceServiceTests
                 new() { ResidentId = 10, StartDate = new DateTime(2026, 1, 1), EndDate = new DateTime(2026, 6, 30), IsActive = false }
             });
 
-        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
-            _service.RegisterResidenceAsync(1, 10, RelationshipType.Tenant, new DateTime(2026, 3, 1)));
+        var result = await _service.RegisterResidenceAsync(
+            1, 10, RelationshipType.Tenant, new DateTime(2026, 3, 1));
 
-        Assert.Contains("chồng lấn", ex.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("chồng lấn", result.ErrorMessage);
         Assert.Equal(ApartmentStatus.Empty, apartment.Status);
         _mockUow.Verify(u => u.CompleteAsync(), Times.Never);
     }
@@ -258,8 +329,9 @@ public class ResidenceServiceTests
             .ReturnsAsync(new List<ResidenceHistory> { residence, remainingResidence });
         _mockApartmentRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(apartment);
 
-        await _service.TerminateResidenceAsync(5, DateTime.Today);
+        var result = await _service.TerminateResidenceAsync(5, DateTime.Today);
 
+        Assert.True(result.IsSuccess);
         Assert.False(residence.IsActive);
         Assert.Equal(DateTime.Today, residence.EndDate);
         Assert.Equal(ApartmentStatus.Occupied, apartment.Status);
@@ -290,8 +362,10 @@ public class ResidenceServiceTests
         _mockApartmentRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(oldApartment);
         _mockApartmentRepo.Setup(r => r.GetByIdAsync(2)).ReturnsAsync(newApartment);
 
-        await _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today);
+        var result = await _service.TransferApartmentAsync(
+            10, 2, RelationshipType.Tenant, DateTime.Today);
 
+        Assert.True(result.IsSuccess);
         Assert.Equal(ApartmentStatus.Occupied, oldApartment.Status);
         Assert.Equal(ApartmentStatus.Occupied, newApartment.Status);
     }
@@ -311,9 +385,11 @@ public class ResidenceServiceTests
         _mockApartmentRepo.Setup(r => r.GetByIdAsync(2))
             .ReturnsAsync(new Apartment { Id = 2, Status = ApartmentStatus.UnderMaintenance });
 
-        await Assert.ThrowsAsync<BusinessRuleException>(() =>
-            _service.TransferApartmentAsync(10, 2, RelationshipType.Tenant, DateTime.Today));
+        var result = await _service.TransferApartmentAsync(
+            10, 2, RelationshipType.Tenant, DateTime.Today);
 
+        Assert.False(result.IsSuccess);
+        Assert.Contains("đang sửa chữa", result.ErrorMessage);
         Assert.True(currentResidence.IsActive);
         Assert.Null(currentResidence.EndDate);
         _mockUow.Verify(u => u.CompleteAsync(), Times.Never);

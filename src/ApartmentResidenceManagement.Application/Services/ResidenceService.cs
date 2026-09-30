@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ApartmentResidenceManagement.Application.Common;
 using ApartmentResidenceManagement.Domain.Entities;
 using ApartmentResidenceManagement.Domain.Enums;
 using ApartmentResidenceManagement.Domain.Exceptions;
@@ -33,56 +34,53 @@ public class ResidenceService
         return await _unitOfWork.ResidenceHistories.GetHistoryByResidentIdAsync(residentId);
     }
 
-    // 1. ĐĂNG KÝ CƯ TRÚ MỚI
-    public async Task<ResidenceHistory> RegisterResidenceAsync(int apartmentId, int residentId, RelationshipType relationshipType, DateTime startDate)
+    public async Task<OperationResult<ResidenceHistory>> RegisterResidenceAsync(
+        int apartmentId,
+        int residentId,
+        RelationshipType relationshipType,
+        DateTime startDate)
     {
         startDate = startDate.Date;
 
-        ValidateRelationshipType(relationshipType);
+        if (!IsValidRelationshipType(relationshipType))
+            return OperationResult<ResidenceHistory>.Failure("Quan hệ cư trú không hợp lệ.");
 
         if (startDate > DateTime.Today)
-        {
-            throw new BusinessRuleException("Ngày bắt đầu cư trú không được ở tương lai.");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Ngày bắt đầu cư trú không được ở tương lai.");
 
         var apartment = await _unitOfWork.Apartments.GetByIdAsync(apartmentId);
         if (apartment == null)
-        {
-            throw new BusinessRuleException("Không tìm thấy căn hộ.");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Không tìm thấy căn hộ.");
 
-        // Chặn đăng ký vào căn hộ đang sửa chữa
         if (apartment.Status == ApartmentStatus.UnderMaintenance)
-        {
-            throw new BusinessRuleException("Không thể đăng ký cư trú vào căn hộ đang sửa chữa (Under Maintenance).");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Không thể đăng ký cư trú vào căn hộ đang sửa chữa.");
 
         var resident = await _unitOfWork.Residents.GetByIdAsync(residentId);
         if (resident == null)
-        {
-            throw new BusinessRuleException("Không tìm thấy cư dân.");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Không tìm thấy cư dân.");
 
-        // Chặn nếu cư dân đang có cư trú active khác
         var activeResidence = await _unitOfWork.ResidenceHistories.GetActiveByResidentIdAsync(residentId);
         if (activeResidence != null)
         {
-            throw new BusinessRuleException($"Cư dân này hiện đang cư trú hoạt động tại căn hộ {activeResidence.Apartment?.ApartmentNumber ?? activeResidence.ApartmentId.ToString()}. Vui lòng kết thúc cư trú cũ trước.");
+            return OperationResult<ResidenceHistory>.Failure(
+                $"Cư dân này hiện đang cư trú tại căn hộ {activeResidence.Apartment?.ApartmentNumber ?? activeResidence.ApartmentId.ToString()}. " +
+                "Vui lòng kết thúc cư trú cũ trước.");
         }
 
-        // Chặn nếu đăng ký Chủ hộ (Owner) mà căn hộ đã có Chủ hộ đang active
         if (relationshipType == RelationshipType.Owner)
         {
             var activeResidences = await _unitOfWork.ResidenceHistories.GetActiveByApartmentIdAsync(apartmentId);
-            if (activeResidences.Any(rh => rh.RelationshipType == RelationshipType.Owner))
+            if (activeResidences.Any(history => history.RelationshipType == RelationshipType.Owner))
             {
-                throw new BusinessRuleException($"Căn hộ {apartment.ApartmentNumber} đã có Chủ hộ đang hoạt động. Không thể thêm Chủ hộ mới.");
+                return OperationResult<ResidenceHistory>.Failure(
+                    $"Căn hộ {apartment.ApartmentNumber} đã có Chủ hộ. Không thể thêm Chủ hộ mới.");
             }
         }
 
         if (startDate < resident.DateOfBirth.Date)
         {
-            throw new BusinessRuleException("Ngày bắt đầu cư trú không được nhỏ hơn ngày sinh của cư dân.");
+            return OperationResult<ResidenceHistory>.Failure(
+                "Ngày bắt đầu cư trú không được nhỏ hơn ngày sinh của cư dân.");
         }
 
         var residenceHistory = await _unitOfWork.ResidenceHistories.GetHistoryByResidentIdAsync(residentId)
@@ -92,7 +90,8 @@ public class ResidenceService
                 !history.EndDate.HasValue ||
                 history.EndDate.Value.Date > startDate))
         {
-            throw new BusinessRuleException("Ngày bắt đầu cư trú bị chồng lấn với lịch sử cư trú đã có của cư dân.");
+            return OperationResult<ResidenceHistory>.Failure(
+                "Ngày bắt đầu cư trú bị chồng lấn với lịch sử cư trú đã có của cư dân.");
         }
 
         var residence = new ResidenceHistory
@@ -104,52 +103,46 @@ public class ResidenceService
             IsActive = true
         };
 
-        // Cập nhật trạng thái căn hộ sang Occupied
         apartment.Status = ApartmentStatus.Occupied;
         _unitOfWork.Apartments.Update(apartment);
 
-        await _unitOfWork.ResidenceHistories.AddAsync(residence);
-        await _unitOfWork.CompleteAsync();
-
-        return residence;
+        try
+        {
+            await _unitOfWork.ResidenceHistories.AddAsync(residence);
+            await _unitOfWork.CompleteAsync();
+            return OperationResult<ResidenceHistory>.Success(residence);
+        }
+        catch (BusinessRuleException ex)
+        {
+            return OperationResult<ResidenceHistory>.Failure(ex.Message);
+        }
     }
 
-    // 2. KẾT THÚC CƯ TRÚ
-    public async Task TerminateResidenceAsync(int residenceId, DateTime endDate)
+    public async Task<OperationResult> TerminateResidenceAsync(int residenceId, DateTime endDate)
     {
         endDate = endDate.Date;
 
         var residence = await _unitOfWork.ResidenceHistories.GetByIdAsync(residenceId);
         if (residence == null)
-        {
-            throw new BusinessRuleException("Không tìm thấy thông tin cư trú.");
-        }
+            return OperationResult.Failure("Không tìm thấy thông tin cư trú.");
 
         if (!residence.IsActive)
-        {
-            throw new BusinessRuleException("Thông tin cư trú này đã được kết thúc trước đó.");
-        }
+            return OperationResult.Failure("Thông tin cư trú này đã được kết thúc trước đó.");
 
         if (endDate > DateTime.Today)
-        {
-            throw new BusinessRuleException("Ngày kết thúc cư trú không được ở tương lai.");
-        }
+            return OperationResult.Failure("Ngày kết thúc cư trú không được ở tương lai.");
 
         if (endDate < residence.StartDate.Date)
-        {
-            throw new BusinessRuleException("Ngày kết thúc cư trú không được nhỏ hơn ngày bắt đầu.");
-        }
+            return OperationResult.Failure("Ngày kết thúc cư trú không được nhỏ hơn ngày bắt đầu.");
 
         residence.IsActive = false;
         residence.EndDate = endDate;
         _unitOfWork.ResidenceHistories.Update(residence);
 
-        // Đồng bộ trạng thái căn hộ từ dữ liệu cư trú thực tế.
-        var activeResidences = await _unitOfWork.ResidenceHistories.GetActiveByApartmentIdAsync(residence.ApartmentId);
-        // Truy vấn vẫn nhìn thấy bản ghi hiện tại trong database vì thay đổi chưa được lưu,
-        // nên loại chính bản ghi đang kết thúc ra khỏi phép đếm.
-        var countActive = activeResidences.Count(rh => rh.Id != residenceId);
-        
+        var activeResidences = await _unitOfWork.ResidenceHistories
+            .GetActiveByApartmentIdAsync(residence.ApartmentId);
+        var countActive = activeResidences.Count(history => history.Id != residenceId);
+
         var apartment = await _unitOfWork.Apartments.GetByIdAsync(residence.ApartmentId);
         if (apartment != null)
         {
@@ -157,65 +150,91 @@ public class ResidenceService
             _unitOfWork.Apartments.Update(apartment);
         }
 
-        await _unitOfWork.CompleteAsync();
+        try
+        {
+            await _unitOfWork.CompleteAsync();
+            return OperationResult.Success();
+        }
+        catch (BusinessRuleException ex)
+        {
+            return OperationResult.Failure(ex.Message);
+        }
     }
 
-    // 3. CHUYỂN CĂN HỘ
-    public async Task<ResidenceHistory> TransferApartmentAsync(int residentId, int newApartmentId, RelationshipType relationshipType, DateTime transferDate)
+    public async Task<OperationResult<ResidenceHistory>> TransferApartmentAsync(
+        int residentId,
+        int newApartmentId,
+        RelationshipType relationshipType,
+        DateTime transferDate)
     {
         transferDate = transferDate.Date;
 
-        ValidateRelationshipType(relationshipType);
+        if (!IsValidRelationshipType(relationshipType))
+            return OperationResult<ResidenceHistory>.Failure("Quan hệ cư trú không hợp lệ.");
 
+        try
+        {
+            return await _unitOfWork.ExecuteInTransactionAsync(() =>
+                TransferApartmentWithinTransactionAsync(
+                    residentId,
+                    newApartmentId,
+                    relationshipType,
+                    transferDate));
+        }
+        catch (BusinessRuleException ex)
+        {
+            return OperationResult<ResidenceHistory>.Failure(ex.Message);
+        }
+    }
+
+    private async Task<OperationResult<ResidenceHistory>> TransferApartmentWithinTransactionAsync(
+        int residentId,
+        int newApartmentId,
+        RelationshipType relationshipType,
+        DateTime transferDate)
+    {
         var activeResidence = await _unitOfWork.ResidenceHistories.GetActiveByResidentIdAsync(residentId);
         if (activeResidence == null)
         {
-            throw new BusinessRuleException("Cư dân này hiện không có đăng ký cư trú hoạt động nào để thực hiện chuyển phòng.");
+            return OperationResult<ResidenceHistory>.Failure(
+                "Cư dân này hiện không có đăng ký cư trú hoạt động nào để thực hiện chuyển căn hộ.");
         }
 
         if (activeResidence.ApartmentId == newApartmentId)
-        {
-            throw new BusinessRuleException("Căn hộ mới trùng với căn hộ hiện tại của cư dân.");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Căn hộ mới trùng với căn hộ hiện tại của cư dân.");
 
         if (transferDate > DateTime.Today)
-        {
-            throw new BusinessRuleException("Ngày chuyển căn hộ không được ở tương lai.");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Ngày chuyển căn hộ không được ở tương lai.");
 
         if (transferDate < activeResidence.StartDate.Date)
         {
-            throw new BusinessRuleException("Ngày chuyển căn hộ không được nhỏ hơn ngày bắt đầu cư trú hiện tại.");
+            return OperationResult<ResidenceHistory>.Failure(
+                "Ngày chuyển căn hộ không được nhỏ hơn ngày bắt đầu cư trú hiện tại.");
         }
 
-        // Kiểm tra toàn bộ điều kiện của căn hộ mới trước khi thay đổi cư trú hiện tại.
-        // Điều này tránh để DbContext giữ entity ở trạng thái dở dang nếu validation thất bại.
         var newApartment = await _unitOfWork.Apartments.GetByIdAsync(newApartmentId);
         if (newApartment == null)
-        {
-            throw new BusinessRuleException("Không tìm thấy căn hộ mới.");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Không tìm thấy căn hộ mới.");
 
         if (newApartment.Status == ApartmentStatus.UnderMaintenance)
-        {
-            throw new BusinessRuleException("Không thể chuyển cư dân vào căn hộ đang sửa chữa.");
-        }
+            return OperationResult<ResidenceHistory>.Failure("Không thể chuyển cư dân vào căn hộ đang sửa chữa.");
 
         if (relationshipType == RelationshipType.Owner)
         {
-            var activeNewResidences = await _unitOfWork.ResidenceHistories.GetActiveByApartmentIdAsync(newApartmentId);
-            if (activeNewResidences.Any(rh => rh.RelationshipType == RelationshipType.Owner))
+            var activeNewResidences = await _unitOfWork.ResidenceHistories
+                .GetActiveByApartmentIdAsync(newApartmentId);
+            if (activeNewResidences.Any(history => history.RelationshipType == RelationshipType.Owner))
             {
-                throw new BusinessRuleException($"Căn hộ mới ({newApartment.ApartmentNumber}) đã có sẵn Chủ hộ. Không thể đặt làm Chủ hộ.");
+                return OperationResult<ResidenceHistory>.Failure(
+                    $"Căn hộ mới ({newApartment.ApartmentNumber}) đã có sẵn Chủ hộ. Không thể đặt làm Chủ hộ.");
             }
         }
 
         var activeOldResidences = await _unitOfWork.ResidenceHistories
             .GetActiveByApartmentIdAsync(activeResidence.ApartmentId);
         var oldApartment = await _unitOfWork.Apartments.GetByIdAsync(activeResidence.ApartmentId);
-        var oldApartmentStillOccupied = activeOldResidences.Any(rh => rh.Id != activeResidence.Id);
+        var oldApartmentStillOccupied = activeOldResidences.Any(history => history.Id != activeResidence.Id);
 
-        // Mọi validation đã thành công; cập nhật hai đầu của giao dịch trong một lần SaveChanges.
         activeResidence.IsActive = false;
         activeResidence.EndDate = transferDate;
         _unitOfWork.ResidenceHistories.Update(activeResidence);
@@ -227,6 +246,10 @@ public class ResidenceService
                 : ApartmentStatus.Empty;
             _unitOfWork.Apartments.Update(oldApartment);
         }
+
+        // Release the generated unique key before inserting the new active row.
+        // Both saves remain in the same transaction and roll back together.
+        await _unitOfWork.CompleteAsync();
 
         var newResidence = new ResidenceHistory
         {
@@ -243,7 +266,7 @@ public class ResidenceService
         await _unitOfWork.ResidenceHistories.AddAsync(newResidence);
         await _unitOfWork.CompleteAsync();
 
-        return newResidence;
+        return OperationResult<ResidenceHistory>.Success(newResidence);
     }
 
     public async Task<IEnumerable<ResidenceHistory>> GetAllResidencesAsync()
@@ -251,11 +274,6 @@ public class ResidenceService
         return await _unitOfWork.ResidenceHistories.GetAllWithDetailsAsync();
     }
 
-    private static void ValidateRelationshipType(RelationshipType relationshipType)
-    {
-        if (!Enum.IsDefined(relationshipType))
-        {
-            throw new BusinessRuleException("Quan hệ cư trú không hợp lệ.");
-        }
-    }
+    private static bool IsValidRelationshipType(RelationshipType relationshipType) =>
+        Enum.IsDefined(relationshipType);
 }

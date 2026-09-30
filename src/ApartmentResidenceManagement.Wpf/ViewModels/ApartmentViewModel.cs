@@ -20,9 +20,9 @@ public class ApartmentViewModel : ViewModelBase
     
     // Properties cho Search và Lọc
     private string _searchText = string.Empty;
-    private ApartmentStatus? _selectedStatusFilter;
-    private int? _selectedFloorFilter;
-    private ObservableCollection<int?> _availableFloors = new();
+    private string _selectedStatusFilter = "Tất cả";
+    private string _selectedFloorFilter = "Tất cả";
+    private List<string> _availableFloors = new();
 
     // Properties cho DataGrid và Form
     private ObservableCollection<Apartment> _apartments = new();
@@ -41,7 +41,7 @@ public class ApartmentViewModel : ViewModelBase
         set => SetProperty(ref _apartments, value);
     }
 
-    public ObservableCollection<int?> AvailableFloors
+    public List<string> AvailableFloors
     {
         get => _availableFloors;
         set => SetProperty(ref _availableFloors, value);
@@ -71,7 +71,7 @@ public class ApartmentViewModel : ViewModelBase
         }
     }
 
-    public ApartmentStatus? SelectedStatusFilter
+    public string SelectedStatusFilter
     {
         get => _selectedStatusFilter;
         set
@@ -83,7 +83,7 @@ public class ApartmentViewModel : ViewModelBase
         }
     }
 
-    public int? SelectedFloorFilter
+    public string SelectedFloorFilter
     {
         get => _selectedFloorFilter;
         set
@@ -133,10 +133,8 @@ public class ApartmentViewModel : ViewModelBase
 
     // Các danh sách phục vụ ComboBox
     public List<ApartmentStatus> StatusOptions { get; } = Enum.GetValues(typeof(ApartmentStatus)).Cast<ApartmentStatus>().ToList();
-    
-    public List<ApartmentStatus?> StatusFilterOptions { get; } = new List<ApartmentStatus?> { null }
-        .Concat(Enum.GetValues(typeof(ApartmentStatus)).Cast<ApartmentStatus>().Select(s => (ApartmentStatus?)s))
-        .ToList();
+
+    public List<string> StatusFilterOptions { get; } = new() { "Tất cả", "Trống", "Đang ở", "Bảo trì" };
     #endregion
 
     #region Commands
@@ -159,8 +157,8 @@ public class ApartmentViewModel : ViewModelBase
         CancelFormCommand = new RelayCommand(_ => CloseForm());
         DeleteApartmentCommand = new AsyncRelayCommand(DeleteDataAsync);
 
-        _selectedStatusFilter = null;
-        _selectedFloorFilter = null;
+        _selectedStatusFilter = "Tất cả";
+        _selectedFloorFilter = "Tất cả";
     }
 
     public async Task LoadDataAsync()
@@ -174,12 +172,9 @@ public class ApartmentViewModel : ViewModelBase
             
             // Cập nhật danh sách Tầng khả dụng để lọc
             var floors = _allApartments.Select(a => a.Floor).Distinct().OrderBy(f => f).ToList();
-            AvailableFloors.Clear();
-            AvailableFloors.Add(null); // Tất cả các tầng
-            foreach (var floor in floors)
-            {
-                AvailableFloors.Add(floor);
-            }
+            var floorList = new List<string> { "Tất cả" };
+            floorList.AddRange(floors.Select(f => f.ToString()));
+            AvailableFloors = floorList;
 
             ApplyFilters();
         }
@@ -204,15 +199,21 @@ public class ApartmentViewModel : ViewModelBase
         }
 
         // 2. Lọc theo trạng thái
-        if (SelectedStatusFilter.HasValue)
+        if (SelectedStatusFilter != "Tất cả")
         {
-            filtered = filtered.Where(a => a.Status == SelectedStatusFilter.Value);
+            filtered = SelectedStatusFilter switch
+            {
+                "Trống"   => filtered.Where(a => a.Status == ApartmentStatus.Empty),
+                "Đang ở" => filtered.Where(a => a.Status == ApartmentStatus.Occupied),
+                "Bảo trì" => filtered.Where(a => a.Status == ApartmentStatus.UnderMaintenance),
+                _         => filtered
+            };
         }
 
         // 3. Lọc theo tầng
-        if (SelectedFloorFilter.HasValue)
+        if (SelectedFloorFilter != "Tất cả" && int.TryParse(SelectedFloorFilter, out int floorNum))
         {
-            filtered = filtered.Where(a => a.Floor == SelectedFloorFilter.Value);
+            filtered = filtered.Where(a => a.Floor == floorNum);
         }
 
         // Cập nhật hiển thị lên UI

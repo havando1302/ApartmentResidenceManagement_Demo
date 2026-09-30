@@ -42,7 +42,12 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual void Update(T entity)
     {
-        DbSet.Update(entity);
+        // DbSet.Update traverses and attaches the complete navigation graph. Most
+        // read queries in this repository are AsNoTracking, so that graph can
+        // contain a different instance of an entity that is already tracked.
+        // Mark only the aggregate root passed to Update as modified; related
+        // entities are updated explicitly through their own repositories.
+        Context.Entry(entity).State = EntityState.Modified;
     }
 
     public virtual void Delete(T entity)

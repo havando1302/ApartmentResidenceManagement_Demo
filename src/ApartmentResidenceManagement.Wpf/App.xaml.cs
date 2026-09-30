@@ -100,8 +100,9 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            NotificationService.Show("Không thể khởi tạo cơ sở dữ liệu. Vui lòng kiểm tra cấu hình kết nối và thử lại.",
-                "Lỗi hệ thống", MessageBoxButton.OK, MessageBoxImage.Error, ex.ToString());
+            ExceptionHandlingService.Handle(
+                ex,
+                "Không thể khởi tạo cơ sở dữ liệu. Vui lòng kiểm tra cấu hình kết nối và thử lại.");
             Shutdown();
             return;
         }
@@ -179,26 +180,25 @@ public partial class App : System.Windows.Application
 
     private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
-        var logPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "crash.log");
-        System.IO.File.AppendAllText(logPath, $"[{DateTime.Now}] Dispatcher Exception:\n{e.Exception}\n\n");
-        NotificationService.Show("Đã xảy ra lỗi khi xử lý thao tác. Vui lòng thử lại hoặc khởi động lại ứng dụng nếu lỗi tiếp diễn.",
-            "Lỗi hệ thống", MessageBoxButton.OK, MessageBoxImage.Error, e.Exception.ToString());
-        e.Handled = true; // Prevents the application from closing immediately, though it might still be in a bad state.
+        ExceptionHandlingService.Handle(e.Exception);
+        e.Handled = true;
     }
 
     private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is Exception ex)
         {
-            NotificationService.Show("Ứng dụng gặp lỗi nghiêm trọng. Vui lòng khởi động lại ứng dụng.",
-                "Lỗi hệ thống", MessageBoxButton.OK, MessageBoxImage.Error, ex.ToString());
+            ExceptionHandlingService.Handle(
+                ex,
+                "Ứng dụng gặp lỗi nghiêm trọng. Vui lòng khởi động lại ứng dụng.");
         }
     }
 
     private void TaskScheduler_UnobservedTaskException(object? sender, System.Threading.Tasks.UnobservedTaskExceptionEventArgs e)
     {
-        NotificationService.Show("Một tác vụ chạy nền chưa hoàn tất. Vui lòng tải lại dữ liệu và thử lại.",
-            "Không thể hoàn tất tác vụ", MessageBoxButton.OK, MessageBoxImage.Error, e.Exception.ToString());
+        ExceptionHandlingService.Handle(
+            e.Exception,
+            "Một tác vụ chạy nền chưa hoàn tất. Vui lòng tải lại dữ liệu và thử lại.");
         e.SetObserved();
     }
 }

@@ -12,4 +12,5 @@ public interface IUnitOfWork : IDisposable
     IUserAccountRepository UserAccounts { get; }
     
     Task<int> CompleteAsync();
+    Task<TResult> ExecuteInTransactionAsync<TResult>(Func<Task<TResult>> operation);
 }

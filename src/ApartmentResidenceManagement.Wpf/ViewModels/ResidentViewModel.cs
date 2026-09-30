@@ -321,7 +321,7 @@ public class ResidentViewModel : ViewModelBase
         }
         catch (Exception)
         {
-            ErrorMessage = "Cư dân này đã phát sinh dữ liệu lịch sử cư trú, không thể xóa.";
+            ErrorMessage = "Lỗi hệ thống trong quá trình xóa cư dân.";
         }
     }
 

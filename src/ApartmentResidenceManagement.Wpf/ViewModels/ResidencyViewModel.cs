@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ApartmentResidenceManagement.Domain.Entities;
 using ApartmentResidenceManagement.Domain.Enums;
-using ApartmentResidenceManagement.Domain.Exceptions;
 using ApartmentResidenceManagement.Application.Services;
 using ApartmentResidenceManagement.Wpf.Commands;
 
@@ -328,17 +327,27 @@ public class ResidencyViewModel : ViewModelBase
                     return;
                 }
 
-                await _residenceService.RegisterResidenceAsync(
+                var result = await _residenceService.RegisterResidenceAsync(
                     SelectedApartmentInput.Id,
                     SelectedResidentInput.Id,
                     SelectedRelationshipType,
                     StartDateInput
                 );
+                if (!result.IsSuccess)
+                {
+                    ErrorMessage = result.ErrorMessage;
+                    return;
+                }
             }
             else if (ActionType == "Terminate")
             {
                 if (SelectedResidence == null) return;
-                await _residenceService.TerminateResidenceAsync(SelectedResidence.Id, EndDateInput);
+                var result = await _residenceService.TerminateResidenceAsync(SelectedResidence.Id, EndDateInput);
+                if (!result.IsSuccess)
+                {
+                    ErrorMessage = result.ErrorMessage;
+                    return;
+                }
             }
             else if (ActionType == "Transfer")
             {
@@ -349,20 +358,21 @@ public class ResidencyViewModel : ViewModelBase
                     return;
                 }
 
-                await _residenceService.TransferApartmentAsync(
+                var result = await _residenceService.TransferApartmentAsync(
                     SelectedResidence.ResidentId,
                     SelectedApartmentInput.Id,
                     SelectedRelationshipType,
                     StartDateInput
                 );
+                if (!result.IsSuccess)
+                {
+                    ErrorMessage = result.ErrorMessage;
+                    return;
+                }
             }
 
             IsFormOpen = false;
             await LoadDataAsync();
-        }
-        catch (BusinessRuleException ex)
-        {
-            ErrorMessage = ex.Message;
         }
         catch (Exception)
         {

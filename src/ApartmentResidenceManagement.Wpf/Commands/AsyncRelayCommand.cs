@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using ApartmentResidenceManagement.Wpf.Services;
 
 namespace ApartmentResidenceManagement.Wpf.Commands;
 
@@ -11,12 +12,17 @@ public sealed class AsyncRelayCommand : ICommand
 {
     private readonly Func<object?, Task> _execute;
     private readonly Predicate<object?>? _canExecute;
+    private readonly Action<Exception> _onException;
     private bool _isExecuting;
 
-    public AsyncRelayCommand(Func<object?, Task> execute, Predicate<object?>? canExecute = null)
+    public AsyncRelayCommand(
+        Func<object?, Task> execute,
+        Predicate<object?>? canExecute = null,
+        Action<Exception>? onException = null)
     {
         _execute = execute ?? throw new ArgumentNullException(nameof(execute));
         _canExecute = canExecute;
+        _onException = onException ?? ExceptionHandlingService.Handle;
     }
 
     public bool CanExecute(object? parameter)
@@ -36,6 +42,13 @@ public sealed class AsyncRelayCommand : ICommand
             _isExecuting = true;
             CommandManager.InvalidateRequerySuggested();
             await _execute(parameter);
+        }
+        catch (Exception ex)
+        {
+            // ICommand.Execute is async void, so an exception that escapes here
+            // becomes a dispatcher-level unhandled exception and Visual Studio
+            // stops at its source line. Convert it to a UI notification instead.
+            _onException(ex);
         }
         finally
         {

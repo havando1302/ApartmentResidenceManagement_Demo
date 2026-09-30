@@ -65,48 +65,13 @@
                     <!-- Lọc Trạng thái -->
                     <StackPanel Grid.Column="1" Margin="0,0,16,0">
                         <TextBlock Text="Trạng thái" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusFilterOptions}" SelectedItem="{Binding SelectedStatusFilter}" Height="40">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock>
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.Empty}">
-                                                        <Setter Property="Text" Value="Trống"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.Occupied}">
-                                                        <Setter Property="Text" Value="Đang ở"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding}" Value="{x:Static enums:ApartmentStatus.UnderMaintenance}">
-                                                        <Setter Property="Text" Value="Bảo trì"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding}" Value="{x:Null}">
-                                                        <Setter Property="Text" Value="Tất cả"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusFilterOptions}" SelectedItem="{Binding SelectedStatusFilter}" Height="40"/>
                     </StackPanel>
 
                     <!-- Lọc Tầng -->
                     <StackPanel Grid.Column="2" Margin="0,0,16,0">
                         <TextBlock Text="Tầng" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding AvailableFloors}" SelectedItem="{Binding SelectedFloorFilter}" Height="40">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock>
-                                        <TextBlock.Text>
-                                            <Binding Path="." TargetNullValue="Tất cả"/>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding AvailableFloors}" SelectedItem="{Binding SelectedFloorFilter}" Height="40"/>
                     </StackPanel>
 
                     <!-- Nút Làm mới -->
